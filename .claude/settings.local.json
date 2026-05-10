@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ffprobe *)",
+      "Bash(mkdir -p /Users/kohei/git/3ds-video-player/js/parsers /Users/kohei/git/3ds-video-player/js/render /Users/kohei/git/3ds-video-player/js/encoders /Users/kohei/git/3ds-video-player/vendor)",
+      "Bash(touch /Users/kohei/git/3ds-video-player/.nojekyll)"
+    ]
+  }
+}

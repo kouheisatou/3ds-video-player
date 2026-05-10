@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3DS 3D Media Studio — 3D動画/写真プレイヤー&コンバーター</title>
+<meta name="description" content="ニンテンドー3DSで撮影した3D動画(.AVI)と3D写真(.MPO)をブラウザで再生・変換・編集">
+<link rel="stylesheet" href="style.css">
+
+<!-- Google Analytics 4 (placeholder ID — replace G-XXXXXXXXXX with your real ID) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX', { send_page_view: true });
+</script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">◇</span>
+    <h1>3DS 3D Media Studio</h1>
+  </div>
+  <a class="ghlink" href="https://github.com/" target="_blank" rel="noopener">GitHub</a>
+</header>
+
+<main class="layout">
+  <div class="workspace">
+    <!-- Left: Preview + Always-visible header + Collapsible panels -->
+    <div class="left-col">
+      <section class="preview-card">
+        <div class="preview-stage">
+          <canvas id="previewCanvas" width="480" height="240" aria-label="プレビュー"></canvas>
+          <div id="previewEmpty" class="preview-empty">右のキューにファイルをドロップしてください</div>
+        </div>
+        <div class="preview-controls">
+          <button id="playBtn" class="btn primary" disabled>▶ 再生</button>
+          <input id="seekBar" class="seek" type="range" min="0" max="1000" value="0" disabled>
+          <span id="timeLabel" class="time">0:00 / 0:00</span>
+          <div class="mode-toggle" role="radiogroup" aria-label="表示モード">
+            <label><input type="radio" name="viewMode" value="2d" checked> 2D</label>
+            <label><input type="radio" name="viewMode" value="sbs"> SBS</label>
+          </div>
+        </div>
+      </section>
+
+      <!-- Always visible: filename + datetime -->
+      <div id="fileHeader" class="file-header">
+        <div class="fh-name" id="fhName">ファイル未選択</div>
+        <div class="fh-date" id="fhDate"></div>
+      </div>
+
+      <!-- Collapsible: file details -->
+      <details class="panel" id="panelMeta">
+        <summary><span class="caret">▸</span> ファイル詳細</summary>
+        <div id="metaPanel" class="panel-body" aria-live="polite">
+          <div class="meta-empty">ファイルが選択されていません</div>
+        </div>
+      </details>
+
+      <!-- Collapsible: conversion settings -->
+      <details class="panel" id="panelSettings">
+        <summary><span class="caret">▸</span> 変換設定</summary>
+        <div class="panel-body settings-grid">
+          <div class="field">
+            <label for="outputFormat">出力フォーマット</label>
+            <select id="outputFormat">
+              <optgroup label="動画(.AVIから)">
+                <option value="mp4-2d-l">MP4 — 2D 左目</option>
+                <option value="mp4-2d-r">MP4 — 2D 右目</option>
+                <option value="mp4-sbs" selected>MP4 — SBS (横並び)</option>
+                <option value="mp4-tab">MP4 — Top/Bottom (上下)</option>
+                <option value="mp4-anaglyph">MP4 — アナグリフ赤青</option>
+              </optgroup>
+              <optgroup label="画像(.MPOから)">
+                <option value="jpg-2d-l">JPEG — 2D 左目</option>
+                <option value="jpg-2d-r">JPEG — 2D 右目</option>
+                <option value="jpg-sbs">JPEG — SBS (横並び)</option>
+                <option value="jpg-tab">JPEG — Top/Bottom</option>
+                <option value="jpg-anaglyph">JPEG — アナグリフ</option>
+                <option value="mpo">MPO — 再パック (左右入替/EXIF更新)</option>
+              </optgroup>
+            </select>
+          </div>
+
+          <fieldset class="field">
+            <legend>回転・反転</legend>
+            <div class="row">
+              <button class="chip active" data-rot="0">0°</button>
+              <button class="chip" data-rot="90">90°</button>
+              <button class="chip" data-rot="180">180°</button>
+              <button class="chip" data-rot="270">270°</button>
+            </div>
+            <div class="row">
+              <label><input type="checkbox" id="flipH"> 水平反転</label>
+              <label><input type="checkbox" id="flipV"> 垂直反転</label>
+              <button id="swapLR" type="button" class="chip mini">左右入替</button>
+            </div>
+          </fieldset>
+
+          <fieldset class="field">
+            <legend>色調整</legend>
+            <label class="slider"><span>明度</span><input type="range" id="brightness" min="-100" max="100" value="0"><output>0</output></label>
+            <label class="slider"><span>コントラスト</span><input type="range" id="contrast" min="-100" max="100" value="0"><output>0</output></label>
+            <label class="slider"><span>彩度</span><input type="range" id="saturation" min="-100" max="100" value="0"><output>0</output></label>
+            <label class="slider"><span>ガンマ</span><input type="range" id="gamma" min="50" max="200" value="100"><output>1.00</output></label>
+            <label class="slider"><span>色相</span><input type="range" id="hue" min="-180" max="180" value="0"><output>0°</output></label>
+            <button id="resetColor" type="button" class="chip mini">リセット</button>
+          </fieldset>
+
+          <fieldset class="field image-only">
+            <legend>JPEG品質</legend>
+            <label class="slider"><span>品質</span><input type="range" id="jpegQuality" min="50" max="100" value="92"><output>92</output></label>
+          </fieldset>
+
+          <fieldset class="field video-only">
+            <legend>動画ビットレート</legend>
+            <label class="slider"><span>Mbps</span><input type="range" id="videoBitrate" min="2" max="20" value="8"><output>8</output></label>
+          </fieldset>
+
+          <div class="field actions-row">
+            <button id="applyToAllBtn" class="btn" type="button" disabled>この設定を全ジョブに適用</button>
+          </div>
+        </div>
+      </details>
+
+      <!-- Collapsible: EXIF -->
+      <details class="panel" id="panelExif">
+        <summary><span class="caret">▸</span> EXIF</summary>
+        <div class="panel-body">
+          <div id="exifReadonly" class="exif-readonly-inline">EXIFはまだ読み込まれていません</div>
+          <button id="editExifBtn" class="btn" type="button" disabled>📝 EXIFを編集…</button>
+        </div>
+      </details>
+    </div>
+
+    <!-- Right: Queue (also acts as drop target) -->
+    <section id="queueSection" class="queue-section">
+      <div class="queue-head">
+        <h2 class="section-title">変換キュー</h2>
+        <div class="queue-actions">
+          <button id="runQueueBtn" class="btn primary" type="button" disabled>▶ 変換</button>
+          <button id="clearQueueBtn" class="btn ghost" type="button" disabled>クリア</button>
+        </div>
+      </div>
+
+      <ul id="queueList" class="queue-list" aria-live="polite">
+        <li class="queue-empty">
+          <div class="dz-icon">⤓</div>
+          <div class="dz-title">.AVI / .MPO をここにドロップ</div>
+          <div class="dz-sub">複数同時可</div>
+          <div class="empty-actions">
+            <label class="btn primary">
+              ファイルを選択
+              <input id="fileInput" type="file" accept=".avi,.mpo,video/avi,video/x-msvideo,image/jpeg" multiple hidden>
+            </label>
+            <button id="loadSampleBtn" class="btn" type="button">サンプル</button>
+          </div>
+        </li>
+      </ul>
+    </section>
+  </div>
+</main>
+
+<!-- EXIF editor modal -->
+<dialog id="exifDialog" class="modal">
+  <form method="dialog" class="modal-inner">
+    <h2>EXIF 編集</h2>
+    <div class="exif-grid">
+      <label>撮影日時 <input type="datetime-local" id="ex_dto"></label>
+      <label>Make <input type="text" id="ex_make" placeholder="Nintendo"></label>
+      <label>Model <input type="text" id="ex_model" placeholder="Nintendo 3DS"></label>
+      <label>Software <input type="text" id="ex_software"></label>
+      <label>説明 <input type="text" id="ex_desc"></label>
+      <label>作者 <input type="text" id="ex_artist"></label>
+      <label>著作権 <input type="text" id="ex_copyright"></label>
+      <label>向き
+        <select id="ex_orientation">
+          <option value="1">通常</option>
+          <option value="3">180°回転</option>
+          <option value="6">90°時計回り</option>
+          <option value="8">90°反時計回り</option>
+          <option value="2">水平反転</option>
+          <option value="4">垂直反転</option>
+        </select>
+      </label>
+      <label>緯度 <input type="number" id="ex_lat" step="0.000001" placeholder="35.681236"></label>
+      <label>経度 <input type="number" id="ex_lon" step="0.000001" placeholder="139.767125"></label>
+      <label>標高(m) <input type="number" id="ex_alt" step="0.1"></label>
+    </div>
+    <div class="exif-readonly">
+      <h3>3DS固有メタデータ(読取専用)</h3>
+      <div id="exifReadonlyDialog">—</div>
+      <label><input type="checkbox" id="ex_keepMaker" checked> 3DS固有データを保持</label>
+    </div>
+    <menu class="modal-actions">
+      <button value="cancel">キャンセル</button>
+      <button id="exifSaveBtn" value="save" class="btn primary">保存</button>
+    </menu>
+  </form>
+</dialog>
+
+<footer class="footer">
+  <p>すべての処理はブラウザ内で完結します。ファイルはサーバーへ送信されません。</p>
+</footer>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
