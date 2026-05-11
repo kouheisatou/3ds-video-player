@@ -3,7 +3,13 @@
     "allow": [
       "Bash(ffprobe *)",
       "Bash(mkdir -p /Users/kohei/git/3ds-video-player/js/parsers /Users/kohei/git/3ds-video-player/js/render /Users/kohei/git/3ds-video-player/js/encoders /Users/kohei/git/3ds-video-player/vendor)",
-      "Bash(touch /Users/kohei/git/3ds-video-player/.nojekyll)"
+      "Bash(touch /Users/kohei/git/3ds-video-player/.nojekyll)",
+      "Bash(curl -sL -o /Users/kohei/git/3ds-video-player/vendor/mp4-muxer.mjs \"https://unpkg.com/mp4-muxer@5.2.2/build/mp4-muxer.mjs\")",
+      "Bash(lsof -ti:8765)",
+      "Bash(xargs kill *)",
+      "Bash(python3 /tmp/no-cache-server.py 8765)",
+      "Bash(curl -sI http://localhost:8765/index.html)",
+      "Bash(curl -sI http://localhost:8765/style.css)"
     ]
   }
 }

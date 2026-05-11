@@ -2,8 +2,8 @@
 // Filters/transforms are applied via a CSS filter on the canvas for cheap preview;
 // destructive rendering for export is handled by render/compose.js + WebGL.
 
-import { jpegBlobAt } from './parsers/avi.js';
-import { decodeImaAdpcmAviChunks } from './parsers/adpcm.js';
+import { jpegBlobAt } from './parsers/avi.js?v=20';
+import { decodeImaAdpcmAviChunks } from './parsers/adpcm.js?v=20';
 
 export class Player {
   constructor(canvas) {
@@ -97,7 +97,43 @@ export class Player {
       this.canvas.width = w;
       this.canvas.height = h;
     }
+    // Reset inline size so the next measurement reads true stage size, not stretched by old style.
+    this.canvas.style.width = '';
+    this.canvas.style.height = '';
+    this._fitToStage();
+    // Also rAF in case the stage hadn't laid out yet (initial load case).
+    requestAnimationFrame(() => this._fitToStage());
   }
+
+  _fitToStage() {
+    const stage = this.canvas.parentElement;
+    if (!stage) return;
+    const cs = getComputedStyle(stage);
+    const pl = parseFloat(cs.paddingLeft) || 0;
+    const pr = parseFloat(cs.paddingRight) || 0;
+    const pt = parseFloat(cs.paddingTop) || 0;
+    const pb = parseFloat(cs.paddingBottom) || 0;
+    // Temporarily collapse the canvas inline size so the parent's intrinsic size
+    // is not influenced by the canvas's drawing-buffer dimensions.
+    this.canvas.style.width = '0px';
+    this.canvas.style.height = '0px';
+    const sw = Math.max(0, stage.clientWidth - pl - pr);
+    const sh = Math.max(0, stage.clientHeight - pt - pb);
+    if (sw === 0 || sh === 0) {
+      this.canvas.style.width = '';
+      this.canvas.style.height = '';
+      return;
+    }
+    const ratio = this.canvas.width / this.canvas.height;
+    const stageRatio = sw / sh;
+    let w, h;
+    if (ratio > stageRatio) { w = sw; h = sw / ratio; }
+    else { h = sh; w = sh * ratio; }
+    this.canvas.style.width = Math.round(w) + 'px';
+    this.canvas.style.height = Math.round(h) + 'px';
+  }
+
+  refit() { this._fitToStage(); }
 
   _drawWithTransform(drawer) {
     const { w, h } = this._baseSize();

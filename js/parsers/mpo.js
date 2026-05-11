@@ -3,6 +3,8 @@
 // listing the offsets to all images. We split by reading MP Index, with a fallback that
 // scans for SOI (FFD8) / EOI (FFD9) byte markers at JPEG segment boundaries.
 
+import { readJpegExif, readMpfApp2 } from './exif.js?v=20';
+
 const SOI = 0xFFD8;
 const EOI = 0xFFD9;
 const APP2 = 0xFFE2;
@@ -41,6 +43,12 @@ export function parseMpo(buffer) {
   // Image dimensions from SOFn marker of left.
   const dims = readJpegDimensions(left);
 
+  // EXIF / MPF — best-effort, never throws.
+  let leftExif = null, rightExif = null, mpfEntries = null;
+  try { leftExif = readJpegExif(left); } catch (e) { console.warn('left EXIF', e); }
+  try { rightExif = readJpegExif(right); } catch (e) { console.warn('right EXIF', e); }
+  try { mpfEntries = readMpfApp2(u8); } catch (e) { console.warn('MPF', e); }
+
   return {
     width: dims.width,
     height: dims.height,
@@ -48,6 +56,9 @@ export function parseMpo(buffer) {
     rightJpeg: right,
     imageCount: imageOffsets.length,
     rawBuffer: u8,
+    leftExif,
+    rightExif,
+    mpfEntries,
   };
 }
 

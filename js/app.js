@@ -1,8 +1,8 @@
 // Application entry. Wires UI to parsers, player, encoders, and queue.
 
-import { parseAvi, jpegBlobAt } from './parsers/avi.js';
-import { parseMpo } from './parsers/mpo.js';
-import { Player } from './player.js';
+import { parseAvi, jpegBlobAt } from './parsers/avi.js?v=20';
+import { parseMpo } from './parsers/mpo.js?v=20';
+import { Player } from './player.js?v=20';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -18,9 +18,13 @@ const state = {
   filter: { brightness:0, contrast:0, saturation:0, gamma:1, hue:0 },
   transform: { rotate: 0, flipH: false, flipV: false, swapLR: false },
   exif: null,
-  jpegQuality: 92,
-  videoBitrate: 8_000_000,
-  outputFormat: 'mp4-sbs',
+  // Queue-wide common settings:
+  common: {
+    jpegQuality: 92,
+    videoBitrate: 8_000_000,
+    videoFormat: 'mp4-sbs',
+    imageFormat: 'jpg-sbs',
+  },
 };
 
 const player = new Player($('#previewCanvas'));
@@ -33,6 +37,11 @@ setupSampleButton();
 setupPreviewControls();
 setupSettings();
 setupQueueActions();
+setupSplitters();
+setupKeyboardShortcuts();
+
+window.addEventListener('resize', () => player.refit?.());
+new ResizeObserver(() => player.refit?.()).observe(document.querySelector('.preview-stage'));
 
 console.log('[App] ready');
 
@@ -134,10 +143,7 @@ async function loadFileForPreview(file, job = null) {
     document.body.classList.add('kind-' + kind);
     updateFileHeader();
     updateMetaPanel();
-    updateExifPanel();
-    updateOutputFormatForKind(kind);
-    $('#applyToSelectedBtn').disabled = !job;
-    $('#editExifBtn').disabled = false;
+    $('#restoreAllBtn').disabled = false;
     applyAllUiToPlayer();
   } catch (err) {
     console.error(err);
@@ -161,52 +167,173 @@ function updateFileHeader() {
   $('#fhDate').textContent = ts ? new Date(ts).toLocaleString('ja-JP') : '';
 }
 
-function updateExifPanel() {
-  const el = $('#exifReadonly');
-  const c = state.current;
-  if (!c) { el.textContent = 'ファイルが選択されていません'; return; }
-  // Placeholder until exif parser is wired up.
-  el.textContent = c.kind === 'image'
-    ? '画像EXIF: 解析実装は次のイテレーションで対応'
-    : '動画ファイル(AVI)はEXIFを持ちません';
+// EXIF fields editable via the pencil dialog.
+const EXIF_FIELDS = [
+  { key: 'dateTimeOriginal', label: '撮影日時', type: 'datetime-local',
+    read: (e) => e.exif?.DateTimeOriginal || e.ifd0?.DateTime,
+    display: (v) => v ? v.replace(/^(\d{4}):(\d{2}):(\d{2}) /, '$1/$2/$3 ') : null },
+  { key: 'make',        label: 'Make',        type: 'text',  read: (e) => e.ifd0?.Make },
+  { key: 'model',       label: 'Model',       type: 'text',  read: (e) => e.ifd0?.Model },
+  { key: 'software',    label: 'Software',    type: 'text',  read: (e) => e.ifd0?.Software },
+  { key: 'description', label: '説明',         type: 'text',  read: (e) => e.ifd0?.ImageDescription },
+  { key: 'artist',      label: '作者',         type: 'text',  read: (e) => e.ifd0?.Artist },
+  { key: 'copyright',   label: '著作権',       type: 'text',  read: (e) => e.ifd0?.Copyright },
+  { key: 'orientation', label: '向き',         type: 'select',
+    options: [[1,'通常'],[3,'180°回転'],[6,'90°時計回り'],[8,'90°反時計回り'],[2,'水平反転'],[4,'垂直反転']],
+    read: (e) => e.ifd0?.Orientation,
+    display: (v) => ({1:'通常',2:'水平反転',3:'180°回転',4:'垂直反転',6:'90°時計回り',8:'90°反時計回り'})[v] || (v != null ? String(v) : null) },
+  { key: 'gps.lat',     label: '緯度',         type: 'number', step: 0.000001,
+    read: (e) => e.gps?.lat, display: (v) => v != null ? Number(v).toFixed(6) : null },
+  { key: 'gps.lon',     label: '経度',         type: 'number', step: 0.000001,
+    read: (e) => e.gps?.lon, display: (v) => v != null ? Number(v).toFixed(6) : null },
+  { key: 'gps.alt',     label: '標高(m)',     type: 'number', step: 0.1,
+    read: (e) => e.gps?.alt, display: (v) => v != null ? `${Number(v).toFixed(1)} m` : null },
+];
+
+function readEditValue(edits, key) {
+  if (!edits) return undefined;
+  if (key.startsWith('gps.')) return edits.gps?.[key.slice(4)];
+  return edits[key];
+}
+
+function writeEditValue(edits, key, value) {
+  if (key.startsWith('gps.')) {
+    edits.gps = edits.gps || {};
+    edits.gps[key.slice(4)] = value;
+  } else {
+    edits[key] = value;
+  }
+}
+
+function clearEditValue(edits, key) {
+  if (key.startsWith('gps.')) {
+    if (edits.gps) delete edits.gps[key.slice(4)];
+  } else {
+    delete edits[key];
+  }
 }
 
 function updateMetaPanel() {
+  const list = $('#infoList');
   const c = state.current;
   if (!c) {
-    $('#metaPanel').innerHTML = '<div class="meta-empty">ファイルが選択されていません</div>';
+    list.innerHTML = '<div class="info-empty">ファイルが選択されていません</div>';
     return;
   }
   const p = c.parsed;
-  let html = `<div class="row"><span>サイズ</span><strong>${(c.file.size/1024).toFixed(1)} KB</strong></div>`;
-  html += `<div class="row"><span>種別</span><strong>${c.kind === 'video' ? '3DS 3D動画' : '3DS 3D写真'}</strong></div>`;
-  html += `<div class="row"><span>解像度</span><strong>${p.width}×${p.height}${c.kind==='video'?' (各目)':''}</strong></div>`;
+  const rows = [];
+  rows.push(['サイズ', `${(c.file.size/1024).toFixed(1)} KB`]);
+  rows.push(['種別', c.kind === 'video' ? '3DS 3D動画' : '3DS 3D写真']);
+  rows.push(['解像度', `${p.width}×${p.height}${c.kind==='video'?' (各目)':''}`]);
   if (c.kind === 'video') {
-    html += `<div class="row"><span>長さ</span><strong>${p.durationSec.toFixed(2)}秒</strong></div>`;
-    html += `<div class="row"><span>FPS</span><strong>${p.fps.toFixed(2)}</strong></div>`;
-    html += `<div class="row"><span>フレーム数</span><strong>${p.frameCount}</strong></div>`;
-    html += `<div class="row"><span>音声</span><strong>${p.audioFmt.sampleRate}Hz / ${p.audioFmt.channels}ch / ADPCM</strong></div>`;
+    rows.push(['長さ', `${p.durationSec.toFixed(2)}秒`]);
+    rows.push(['FPS', p.fps.toFixed(2)]);
+    rows.push(['フレーム数', String(p.frameCount)]);
+    rows.push(['音声', `${p.audioFmt.sampleRate}Hz / ${p.audioFmt.channels}ch / ADPCM`]);
   } else {
-    html += `<div class="row"><span>画像数</span><strong>${p.imageCount}</strong></div>`;
-    html += `<div class="row"><span>左目JPEG</span><strong>${(p.leftJpeg.byteLength/1024).toFixed(1)} KB</strong></div>`;
-    html += `<div class="row"><span>右目JPEG</span><strong>${(p.rightJpeg.byteLength/1024).toFixed(1)} KB</strong></div>`;
+    rows.push(['画像数', String(p.imageCount)]);
+    rows.push(['左目JPEG', `${(p.leftJpeg.byteLength/1024).toFixed(1)} KB`]);
+    rows.push(['右目JPEG', `${(p.rightJpeg.byteLength/1024).toFixed(1)} KB`]);
   }
-  $('#metaPanel').innerHTML = html;
+
+  let html = '<div class="info-section">ファイル詳細</div>';
+  html += rows.map(([k, v]) =>
+    `<div class="info-row"><span class="info-label">${escapeHtml(k)}</span><span class="info-value">${escapeHtml(String(v))}</span><span></span></div>`
+  ).join('');
+
+  if (c.kind === 'image') {
+    html += '<div class="info-section">EXIF</div>';
+    const exif = c.parsed.leftExif || { ifd0:{}, exif:{}, gps:{} };
+    const edits = state.exif || {};
+    for (const f of EXIF_FIELDS) {
+      const originalRaw = f.read(exif);
+      const editedRaw = readEditValue(edits, f.key);
+      const isModified = editedRaw !== undefined && editedRaw !== null && editedRaw !== '';
+      const raw = isModified ? editedRaw : originalRaw;
+      const fmt = f.display ? f.display(raw) : (raw != null && raw !== '' ? String(raw) : null);
+      const display = fmt ?? '—';
+      html += `<div class="info-row"><span class="info-label">${escapeHtml(f.label)}</span><span class="info-value ${isModified?'modified':''}">${escapeHtml(display)}</span><button class="edit-btn" data-edit="${f.key}" title="編集">✏️</button></div>`;
+    }
+    if (c.parsed.leftExif?.makerNote?.parsed) {
+      const m = c.parsed.leftExif.makerNote.parsed;
+      const mrows = [];
+      if (m.Parallax != null) mrows.push(['Parallax', m.Parallax]);
+      if (m.ModelID != null) mrows.push(['Model ID', m.ModelID]);
+      if (m.TimeStamp) mrows.push(['TimeStamp', m.TimeStamp]);
+      if (m.InternalSerialNumber) mrows.push(['Internal Serial', m.InternalSerialNumber]);
+      if (mrows.length) {
+        html += '<div class="info-section">3DS MakerNote</div>';
+        html += mrows.map(([k, v]) =>
+          `<div class="info-row"><span class="info-label">${escapeHtml(k)}</span><span class="info-value">${escapeHtml(String(v))}</span><span></span></div>`
+        ).join('');
+      }
+    }
+  }
+
+  list.innerHTML = html;
+  list.querySelectorAll('.edit-btn').forEach(b => {
+    b.addEventListener('click', () => openFieldEditDialog(b.dataset.edit));
+  });
 }
 
-function updateOutputFormatForKind(kind) {
-  const sel = $('#outputFormat');
-  for (const opt of sel.options) {
-    const v = opt.value;
-    const isVideo = v.startsWith('mp4-');
-    const isImage = v.startsWith('jpg-') || v === 'mpo';
-    opt.hidden = (kind === 'video' && !isVideo) || (kind === 'image' && !isImage);
+function openFieldEditDialog(key) {
+  const field = EXIF_FIELDS.find(f => f.key === key);
+  if (!field) return;
+  const dlg = $('#fieldEditDialog');
+  $('#fieldEditTitle').textContent = field.label + ' を編集';
+  const body = $('#fieldEditBody');
+  const exif = state.current?.parsed.leftExif || { ifd0:{}, exif:{}, gps:{} };
+  const originalRaw = field.read(exif);
+  const edited = readEditValue(state.exif || {}, key);
+  let current = edited ?? originalRaw ?? '';
+  // For datetime-local, convert EXIF "YYYY:MM:DD HH:mm:ss" → "YYYY-MM-DDTHH:mm"
+  if (field.type === 'datetime-local' && typeof current === 'string') {
+    const m = current.match(/^(\d{4})[:\-](\d{2})[:\-](\d{2})[ T](\d{2}):(\d{2})/);
+    if (m) current = `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}`;
+    else current = '';
   }
-  if (sel.options[sel.selectedIndex]?.hidden) {
-    for (const opt of sel.options) if (!opt.hidden) { sel.value = opt.value; break; }
+  let inputHtml;
+  if (field.type === 'select') {
+    inputHtml = `<select id="fieldEditInput">${field.options.map(([v,l]) =>
+      `<option value="${v}"${String(v)===String(current)?' selected':''}>${escapeHtml(l)}</option>`).join('')}</select>`;
+  } else {
+    const stepAttr = field.step ? ` step="${field.step}"` : '';
+    inputHtml = `<input id="fieldEditInput" type="${field.type}"${stepAttr} value="${escapeHtml(String(current))}">`;
   }
-  state.outputFormat = sel.value;
+  const originalLabel = originalRaw != null && originalRaw !== ''
+    ? `<div class="field-edit-orig">元: ${escapeHtml(field.display ? field.display(originalRaw) : String(originalRaw))}</div>`
+    : '';
+  body.innerHTML = `<label>${escapeHtml(field.label)}</label>${inputHtml}${originalLabel}`;
+  if (edited != null && edited !== '') {
+    body.innerHTML += `<button id="fieldEditClearBtn" type="button" class="btn mini ghost" style="align-self:flex-start">この項目を元に戻す</button>`;
+  }
+  dlg.showModal();
+  setTimeout(() => $('#fieldEditInput').focus(), 0);
+
+  const saveBtn = $('#fieldEditSaveBtn');
+  const clearBtn = $('#fieldEditClearBtn');
+  const onSave = (e) => {
+    const val = $('#fieldEditInput').value;
+    if (val === '' || val == null) {
+      clearEditValue(state.exif || (state.exif = {}), key);
+    } else {
+      writeEditValue(state.exif || (state.exif = {}), key,
+        field.type === 'number' ? parseFloat(val) :
+        field.type === 'select' ? parseInt(val, 10) : val);
+    }
+    persistToSelectedJob();
+    updateMetaPanel();
+    ga('exif_edited', { key });
+  };
+  saveBtn.onclick = onSave;
+  if (clearBtn) clearBtn.onclick = () => {
+    clearEditValue(state.exif || {}, key);
+    persistToSelectedJob();
+    updateMetaPanel();
+    dlg.close();
+  };
 }
+
 
 function setupPreviewControls() {
   $('#playBtn').addEventListener('click', () => {
@@ -247,21 +374,27 @@ function setupSettings() {
       b.classList.add('active');
       state.transform.rotate = parseInt(b.dataset.rot, 10);
       player.setTransform({ rotate: state.transform.rotate });
+      enforceSbsAvailability();
       persistToSelectedJob();
     });
   });
-  $('#flipH').addEventListener('change', e => {
-    state.transform.flipH = e.target.checked;
-    player.setTransform({ flipH: e.target.checked });
+  $('#flipHBtn').addEventListener('click', () => {
+    state.transform.flipH = !state.transform.flipH;
+    $('#flipHBtn').setAttribute('aria-pressed', state.transform.flipH);
+    $('#flipHBtn').classList.toggle('active', state.transform.flipH);
+    player.setTransform({ flipH: state.transform.flipH });
     persistToSelectedJob();
   });
-  $('#flipV').addEventListener('change', e => {
-    state.transform.flipV = e.target.checked;
-    player.setTransform({ flipV: e.target.checked });
+  $('#flipVBtn').addEventListener('click', () => {
+    state.transform.flipV = !state.transform.flipV;
+    $('#flipVBtn').setAttribute('aria-pressed', state.transform.flipV);
+    $('#flipVBtn').classList.toggle('active', state.transform.flipV);
+    player.setTransform({ flipV: state.transform.flipV });
     persistToSelectedJob();
   });
-  $('#swapLR')?.addEventListener('click', () => {
+  $('#swapLR').addEventListener('click', () => {
     state.transform.swapLR = !state.transform.swapLR;
+    $('#swapLR').setAttribute('aria-pressed', state.transform.swapLR);
     $('#swapLR').classList.toggle('active', state.transform.swapLR);
     player.setTransform({ swapLR: state.transform.swapLR });
     persistToSelectedJob();
@@ -298,48 +431,74 @@ function setupSettings() {
     persistToSelectedJob();
   });
 
+  // Common (queue-wide) settings
   const q = $('#jpegQuality'), qOut = q.nextElementSibling;
   qOut.value = q.value;
   q.addEventListener('input', () => {
     qOut.value = q.value;
-    state.jpegQuality = q.valueAsNumber;
-    persistToSelectedJob();
+    state.common.jpegQuality = q.valueAsNumber;
+    applyCommonToAllJobs();
   });
   const v = $('#videoBitrate'), vOut = v.nextElementSibling;
   vOut.value = v.value;
   v.addEventListener('input', () => {
     vOut.value = v.value;
-    state.videoBitrate = v.valueAsNumber * 1_000_000;
-    persistToSelectedJob();
+    state.common.videoBitrate = v.valueAsNumber * 1_000_000;
+    applyCommonToAllJobs();
+  });
+  $('#outputFormatVideo').addEventListener('change', e => {
+    state.common.videoFormat = e.target.value;
+    applyCommonToAllJobs();
+  });
+  $('#outputFormatImage').addEventListener('change', e => {
+    state.common.imageFormat = e.target.value;
+    applyCommonToAllJobs();
   });
 
-  $('#outputFormat').addEventListener('change', e => {
-    state.outputFormat = e.target.value;
+  $('#restoreAllBtn').addEventListener('click', () => {
+    state.transform = { rotate: 0, flipH: false, flipV: false, swapLR: false };
+    state.filter = { brightness:0, contrast:0, saturation:0, gamma:1, hue:0 };
+    state.exif = null;
+    applySettingsToUi({ transform: state.transform, filter: state.filter, exif: null });
+    player.setTransform(state.transform);
+    player.setFilter(state.filter);
     persistToSelectedJob();
-  });
-
-  $('#editExifBtn').addEventListener('click', () => {
-    populateExifFromCurrent();
-    $('#exifDialog').showModal();
-    ga('exif_open');
-  });
-  $('#exifSaveBtn').addEventListener('click', () => {
-    state.exif = collectExifFromUi();
-    ga('exif_edited', { fields: Object.keys(state.exif).length });
-    persistToSelectedJob();
+    updateMetaPanel();
+    ga('restore_all');
   });
 }
 
+// 90°/270° rotation makes stereoscopic disparity vertical, breaking 3D viewing.
+// Force 2D preview and disable SBS toggle whenever rotation is perpendicular.
+function enforceSbsAvailability() {
+  const rot = state.transform.rotate % 360;
+  const breaks3D = rot === 90 || rot === 270;
+  const sbsRadio = document.querySelector('input[name="viewMode"][value="sbs"]');
+  const twoDRadio = document.querySelector('input[name="viewMode"][value="2d"]');
+  const sbsLabel = sbsRadio?.closest('label');
+  if (!sbsRadio) return;
+  sbsRadio.disabled = breaks3D;
+  if (sbsLabel) {
+    sbsLabel.style.opacity = breaks3D ? '0.4' : '';
+    sbsLabel.title = breaks3D ? '90°/270°回転中は3D表示は無効' : '';
+  }
+  if (breaks3D && sbsRadio.checked) {
+    twoDRadio.checked = true;
+    twoDRadio.dispatchEvent(new Event('change'));
+  }
+}
+
 function persistToSelectedJob() {
+  // Per-file adjustments (transform/filter/exif) persist to the selected job only.
+  // Queue-wide common settings are stored on state.common and copied into each job by applyCommonToAllJobs.
   const job = state.queue.find(x => x.id === state.selectedJobId);
   if (!job) return;
-  job.settings = snapshotSettings();
-  // Refresh queue UI just for the affected item's detail label.
-  const li = document.querySelector(`.queue-item[data-id="${job.id}"]`);
-  if (li) {
-    const detail = li.querySelector('.q-detail');
-    if (detail) detail.innerHTML = `${job.kind === 'video' ? '🎞️' : '🖼️'} ${labelOutput(job.settings.outputFormat)}`;
-  }
+  job.settings = {
+    ...job.settings,
+    transform: { ...state.transform },
+    filter: { ...state.filter },
+    exif: state.exif,
+  };
 }
 
 function applyAllUiToPlayer() {
@@ -347,58 +506,8 @@ function applyAllUiToPlayer() {
   player.setFilter(state.filter);
 }
 
-function populateExifFromCurrent() {
-  // Pre-fill from current file metadata when available.
-  const c = state.current;
-  if (!c) return;
-  $('#ex_make').value = $('#ex_make').value || 'Nintendo';
-  $('#ex_model').value = $('#ex_model').value || 'Nintendo 3DS';
-}
-
-function collectExifFromUi() {
-  return {
-    dateTimeOriginal: $('#ex_dto').value,
-    make: $('#ex_make').value,
-    model: $('#ex_model').value,
-    software: $('#ex_software').value,
-    description: $('#ex_desc').value,
-    artist: $('#ex_artist').value,
-    copyright: $('#ex_copyright').value,
-    orientation: parseInt($('#ex_orientation').value, 10),
-    gps: {
-      lat: parseFloat($('#ex_lat').value) || null,
-      lon: parseFloat($('#ex_lon').value) || null,
-      alt: parseFloat($('#ex_alt').value) || null,
-    },
-    keepMaker: $('#ex_keepMaker').checked,
-  };
-}
 
 function setupQueueActions() {
-  $('#applyToAllBtn').addEventListener('click', () => {
-    if (state.queue.length === 0) return;
-    const snap = snapshotSettings();
-    for (const job of state.queue) {
-      if (job.status === 'processing' || job.status === 'done') continue;
-      // Re-pick output format compatible with this job's kind.
-      const wanted = snap.outputFormat;
-      const isVideoFmt = wanted.startsWith('mp4-');
-      const isImageFmt = wanted.startsWith('jpg-') || wanted === 'mpo';
-      if ((job.kind === 'video' && !isVideoFmt) || (job.kind === 'image' && !isImageFmt)) {
-        // Map to corresponding format if mismatch.
-        const mapping = {
-          'mp4-2d-l':'jpg-2d-l','mp4-2d-r':'jpg-2d-r','mp4-sbs':'jpg-sbs',
-          'mp4-tab':'jpg-tab','mp4-anaglyph':'jpg-anaglyph',
-          'jpg-2d-l':'mp4-2d-l','jpg-2d-r':'mp4-2d-r','jpg-sbs':'mp4-sbs',
-          'jpg-tab':'mp4-tab','jpg-anaglyph':'mp4-anaglyph','mpo':'mp4-sbs',
-        };
-        job.settings = { ...snap, outputFormat: mapping[wanted] || (job.kind === 'video' ? 'mp4-sbs' : 'jpg-sbs') };
-      } else {
-        job.settings = { ...snap };
-      }
-    }
-    refreshQueueUi();
-  });
   $('#clearQueueBtn').addEventListener('click', () => {
     state.queue = state.queue.filter(j => j.status === 'processing');
     if (!state.queue.find(x => x.id === state.selectedJobId)) {
@@ -409,7 +518,7 @@ function setupQueueActions() {
       document.body.classList.remove('kind-video', 'kind-image');
       updateFileHeader();
       updateMetaPanel();
-      updateExifPanel();
+      $('#restoreAllBtn').disabled = true;
     }
     refreshQueueUi();
   });
@@ -419,23 +528,23 @@ function setupQueueActions() {
 }
 
 function applySettingsToUi(s) {
-  // Restore UI controls from a job's stored settings.
-  state.outputFormat = s.outputFormat;
+  // Per-file transform/filter/exif → restore to UI controls.
   state.transform = { ...s.transform };
   state.filter = { ...s.filter };
-  state.jpegQuality = s.jpegQuality;
-  state.videoBitrate = s.videoBitrate;
   state.exif = s.exif;
-
-  const sel = $('#outputFormat');
-  if (sel.value !== s.outputFormat) sel.value = s.outputFormat;
 
   document.querySelectorAll('button.chip[data-rot]').forEach(b => {
     b.classList.toggle('active', parseInt(b.dataset.rot, 10) === s.transform.rotate);
   });
-  $('#flipH').checked = !!s.transform.flipH;
-  $('#flipV').checked = !!s.transform.flipV;
-  $('#swapLR').classList.toggle('active', !!s.transform.swapLR);
+  const setToggle = (id, on) => {
+    const el = $('#' + id);
+    if (!el) return;
+    el.setAttribute('aria-pressed', !!on);
+    el.classList.toggle('active', !!on);
+  };
+  setToggle('flipHBtn', s.transform.flipH);
+  setToggle('flipVBtn', s.transform.flipV);
+  setToggle('swapLR', s.transform.swapLR);
 
   const setSlider = (id, value, fmt) => {
     const inp = document.getElementById(id);
@@ -447,8 +556,8 @@ function applySettingsToUi(s) {
   setSlider('saturation', s.filter.saturation, v => String(v));
   setSlider('gamma', Math.round(s.filter.gamma * 100), v => (v/100).toFixed(2));
   setSlider('hue', s.filter.hue, v => v + '°');
-  setSlider('jpegQuality', s.jpegQuality, v => String(v));
-  setSlider('videoBitrate', Math.round(s.videoBitrate / 1_000_000), v => String(v));
+
+  enforceSbsAvailability();
 }
 
 function addToQueue(file, kind) {
@@ -457,7 +566,7 @@ function addToQueue(file, kind) {
     name: file.name,
     kind,
     file,
-    settings: snapshotSettings(),
+    settings: defaultJobSettings(kind),
     status: 'pending',
     progress: 0,
     blob: null,
@@ -469,27 +578,52 @@ function addToQueue(file, kind) {
   return job;
 }
 
-function snapshotSettings() {
+function snapshotSettings(kind) {
+  // Snapshot of the CURRENT state — used when persisting changes the user just made
+  // to the selected job. Format/quality/bitrate always come from queue-wide common.
+  const c = state.common;
   return {
-    outputFormat: state.outputFormat,
+    outputFormat: kind === 'video' ? c.videoFormat : c.imageFormat,
     transform: { ...state.transform },
     filter: { ...state.filter },
-    jpegQuality: state.jpegQuality,
-    videoBitrate: state.videoBitrate,
+    jpegQuality: c.jpegQuality,
+    videoBitrate: c.videoBitrate,
     exif: state.exif,
+  };
+}
+
+function defaultJobSettings(kind) {
+  // Each new queue item starts with neutral per-file adjustments — not inherited from
+  // whatever the user was viewing. Common (format/quality/bitrate) is shared queue-wide.
+  const c = state.common;
+  return {
+    outputFormat: kind === 'video' ? c.videoFormat : c.imageFormat,
+    transform: { rotate: 0, flipH: false, flipV: false, swapLR: false },
+    filter: { brightness: 0, contrast: 0, saturation: 0, gamma: 1, hue: 0 },
+    jpegQuality: c.jpegQuality,
+    videoBitrate: c.videoBitrate,
+    exif: null,
   };
 }
 
 function addToQueueFromFile(file) {
   const ext = file.name.toLowerCase().split('.').pop();
   const kind = (ext === 'avi') ? 'video' : 'image';
-  // Pick reasonable default output format per kind.
-  const prevFormat = state.outputFormat;
-  if (kind === 'video' && !state.outputFormat.startsWith('mp4')) state.outputFormat = 'mp4-sbs';
-  if (kind === 'image' && !(state.outputFormat.startsWith('jpg') || state.outputFormat === 'mpo')) state.outputFormat = 'jpg-sbs';
-  const job = addToQueue(file, kind);
-  state.outputFormat = prevFormat;
-  return job;
+  return addToQueue(file, kind);
+}
+
+function applyCommonToAllJobs() {
+  for (const job of state.queue) {
+    if (job.status === 'processing' || job.status === 'done') continue;
+    const c = state.common;
+    job.settings = {
+      ...job.settings,
+      outputFormat: job.kind === 'video' ? c.videoFormat : c.imageFormat,
+      jpegQuality: c.jpegQuality,
+      videoBitrate: c.videoBitrate,
+    };
+  }
+  refreshQueueUi();
 }
 
 async function generateThumbnail(job) {
@@ -617,15 +751,16 @@ async function runQueue() {
   }
 }
 
+const ENC_VER = 'v=11';
 async function processJob(job, onProgress) {
   const buf = await job.file.arrayBuffer();
   const fmt = job.settings.outputFormat;
   if (fmt === 'mpo' || fmt.startsWith('jpg-')) {
-    const { encodeImageJob } = await import('./encoders/image.js');
+    const { encodeImageJob } = await import(`./encoders/image.js?${ENC_VER}`);
     return encodeImageJob({ buffer: buf, settings: job.settings, onProgress });
   }
   if (fmt.startsWith('mp4-')) {
-    const { encodeVideoJob } = await import('./encoders/video.js');
+    const { encodeVideoJob } = await import(`./encoders/video.js?${ENC_VER}`);
     return encodeVideoJob({ buffer: buf, settings: job.settings, onProgress });
   }
   throw new Error('未対応のフォーマット: ' + fmt);
@@ -636,6 +771,104 @@ function fmtTime(t) {
   const m = Math.floor(t / 60);
   const s = Math.floor(t % 60).toString().padStart(2, '0');
   return `${m}:${s}`;
+}
+
+function setupSplitters() {
+  const workspace = $('#workspace');
+  const leftCol = $('#leftCol');
+  // Restore saved sizes.
+  const savedQ = localStorage.getItem('ui:queueW');
+  if (savedQ) workspace.style.setProperty('--queue-w', savedQ);
+  const savedP = localStorage.getItem('ui:previewH');
+  if (savedP) leftCol.style.setProperty('--preview-h', savedP);
+
+  setupDragSplitter($('#splitterV'), (deltaPx, startSize) => {
+    const next = Math.max(260, Math.min(700, startSize - deltaPx));
+    workspace.style.setProperty('--queue-w', next + 'px');
+    localStorage.setItem('ui:queueW', next + 'px');
+  }, () => parseInt(getComputedStyle(workspace).gridTemplateColumns.split(' ').slice(-1)[0], 10) || 380, 'x');
+
+  setupDragSplitter($('#splitterH'), (deltaPx, startSize) => {
+    const next = Math.max(180, Math.min(window.innerHeight - 200, startSize + deltaPx));
+    leftCol.style.setProperty('--preview-h', next + 'px');
+    localStorage.setItem('ui:previewH', next + 'px');
+  }, () => leftCol.firstElementChild.getBoundingClientRect().height, 'y');
+}
+
+function setupDragSplitter(handle, onDelta, getStartSize, axis) {
+  if (!handle) return;
+  const start = (e) => {
+    e.preventDefault();
+    const startPos = axis === 'x' ? e.clientX : e.clientY;
+    const startSize = getStartSize();
+    handle.classList.add('dragging');
+    document.body.style.cursor = axis === 'x' ? 'col-resize' : 'row-resize';
+    const move = (ev) => {
+      const pos = axis === 'x' ? ev.clientX : ev.clientY;
+      onDelta(pos - startPos, startSize);
+    };
+    const up = () => {
+      handle.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.removeEventListener('mousemove', move);
+      document.removeEventListener('mouseup', up);
+    };
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
+  };
+  handle.addEventListener('mousedown', start);
+}
+
+function setupKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    // Ignore when typing in form fields or when a dialog is open.
+    if (e.target.matches('input, textarea, select') && e.target.type !== 'range') return;
+    if ($('#fieldEditDialog')?.open) return;
+
+    let handled = true;
+    if (e.code === 'Space') {
+      $('#playBtn').click();
+    } else if (e.code === 'ArrowLeft') {
+      seekRelative(e.shiftKey ? -1 : -5);
+    } else if (e.code === 'ArrowRight') {
+      seekRelative(e.shiftKey ? 1 : 5);
+    } else if (e.code === 'ArrowDown' || e.code === 'KeyJ') {
+      cycleSelection(1);
+    } else if (e.code === 'ArrowUp' || e.code === 'KeyK') {
+      cycleSelection(-1);
+    } else if (e.key === '2') {
+      const r = document.querySelector('input[name="viewMode"][value="2d"]'); r.checked = true; r.dispatchEvent(new Event('change'));
+    } else if (e.key === '3' || e.key.toLowerCase() === 's') {
+      const r = document.querySelector('input[name="viewMode"][value="sbs"]'); r.checked = true; r.dispatchEvent(new Event('change'));
+    } else if (e.key.toLowerCase() === 'r') {
+      const next = (state.transform.rotate + 90) % 360;
+      const btn = document.querySelector(`button.chip[data-rot="${next}"]`);
+      btn?.click();
+    } else if (e.key.toLowerCase() === 'h') {
+      $('#flipHBtn')?.click();
+    } else if (e.key.toLowerCase() === 'v') {
+      $('#flipVBtn')?.click();
+    } else if (e.key.toLowerCase() === 'x') {
+      $('#swapLR')?.click();
+    } else {
+      handled = false;
+    }
+    if (handled) e.preventDefault();
+  });
+}
+
+function seekRelative(deltaSec) {
+  if (!state.current || state.current.kind !== 'video') return;
+  const total = state.current.parsed.durationSec;
+  const t = Math.max(0, Math.min(total, player.currentTime() + deltaSec));
+  player.seek(t);
+}
+
+function cycleSelection(direction) {
+  if (state.queue.length === 0) return;
+  const i = state.queue.findIndex(j => j.id === state.selectedJobId);
+  const next = state.queue[(i + direction + state.queue.length) % state.queue.length];
+  selectJob(next.id);
 }
 
 function escapeHtml(s) {
