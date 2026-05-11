@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>3DS 3D Media Studio — 3D動画/写真プレイヤー&コンバーター</title>
 <meta name="description" content="ニンテンドー3DSで撮影した3D動画(.AVI)と3D写真(.MPO)をブラウザで再生・変換・編集">
-<link rel="stylesheet" href="style.css?v=18">
+<link rel="stylesheet" href="style.css?v=win95">
 
 <!-- Google Analytics 4 (placeholder ID — replace G-XXXXXXXXXX with your real ID) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
@@ -20,17 +20,21 @@
 <header class="topbar">
   <div class="brand">
     <svg class="logo" viewBox="0 0 24 24" aria-hidden="true">
-      <rect x="3" y="2" width="18" height="9" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.6"/>
-      <rect x="5.5" y="4" width="13" height="5" rx="0.6" fill="currentColor" opacity="0.55"/>
+      <rect x="3" y="2" width="18" height="9" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <rect x="5.5" y="4" width="13" height="5" fill="currentColor" opacity="0.55"/>
       <line x1="3" y1="11.5" x2="21" y2="11.5" stroke="currentColor" stroke-width="1.2" opacity="0.7"/>
-      <rect x="3" y="13" width="18" height="9" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.6"/>
-      <rect x="5.5" y="15" width="13" height="5" rx="0.6" fill="currentColor" opacity="0.35"/>
+      <rect x="3" y="13" width="18" height="9" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <rect x="5.5" y="15" width="13" height="5" fill="currentColor" opacity="0.35"/>
       <circle cx="17.5" cy="20.5" r="0.6" fill="currentColor"/>
       <circle cx="19" cy="20.5" r="0.6" fill="currentColor"/>
     </svg>
     <h1>3DS 3D Media Studio</h1>
+    <div class="titlebar-buttons" aria-hidden="true">
+      <button class="titlebar-btn" tabindex="-1" title="最小化">_</button>
+      <button class="titlebar-btn" tabindex="-1" title="最大化">□</button>
+      <a class="titlebar-btn" href="https://github.com/" target="_blank" rel="noopener" title="GitHubで開く" style="text-decoration:none">×</a>
+    </div>
   </div>
-  <a class="ghlink" href="https://github.com/" target="_blank" rel="noopener">GitHub</a>
 </header>
 
 <main class="layout">
