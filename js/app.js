@@ -340,11 +340,11 @@ function setupPreviewControls() {
     if (!state.current || state.current.kind !== 'video') return;
     if (player.playing) {
       player.pause();
-      $('#playBtn').textContent = '▶ 再生';
+      $('#playBtn').textContent = '▶';
       ga('preview_pause');
     } else {
       player.play();
-      $('#playBtn').textContent = '⏸ 一時停止';
+      $('#playBtn').textContent = '⏸';
       ga('preview_play');
     }
   });
@@ -353,7 +353,7 @@ function setupPreviewControls() {
     $('#seekBar').value = String(Math.round(t/total*1000));
     $('#timeLabel').textContent = `${fmtTime(t)} / ${fmtTime(total)}`;
   };
-  player.onEnd = () => { $('#playBtn').textContent = '▶ 再生'; };
+  player.onEnd = () => { $('#playBtn').textContent = '▶'; };
   $('#seekBar').addEventListener('input', () => {
     const total = state.current?.parsed.durationSec || 0;
     const t = $('#seekBar').valueAsNumber/1000 * total;
@@ -368,34 +368,27 @@ function setupPreviewControls() {
 }
 
 function setupSettings() {
-  document.querySelectorAll('button.chip[data-rot]').forEach(b => {
-    b.addEventListener('click', () => {
-      document.querySelectorAll('button.chip[data-rot]').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      state.transform.rotate = parseInt(b.dataset.rot, 10);
+  document.querySelectorAll('input[name="rotate"]').forEach(r => {
+    r.addEventListener('change', () => {
+      if (!r.checked) return;
+      state.transform.rotate = parseInt(r.value, 10);
       player.setTransform({ rotate: state.transform.rotate });
       enforceSbsAvailability();
       persistToSelectedJob();
     });
   });
-  $('#flipHBtn').addEventListener('click', () => {
-    state.transform.flipH = !state.transform.flipH;
-    $('#flipHBtn').setAttribute('aria-pressed', state.transform.flipH);
-    $('#flipHBtn').classList.toggle('active', state.transform.flipH);
+  $('#flipH').addEventListener('change', e => {
+    state.transform.flipH = e.target.checked;
     player.setTransform({ flipH: state.transform.flipH });
     persistToSelectedJob();
   });
-  $('#flipVBtn').addEventListener('click', () => {
-    state.transform.flipV = !state.transform.flipV;
-    $('#flipVBtn').setAttribute('aria-pressed', state.transform.flipV);
-    $('#flipVBtn').classList.toggle('active', state.transform.flipV);
+  $('#flipV').addEventListener('change', e => {
+    state.transform.flipV = e.target.checked;
     player.setTransform({ flipV: state.transform.flipV });
     persistToSelectedJob();
   });
-  $('#swapLR').addEventListener('click', () => {
-    state.transform.swapLR = !state.transform.swapLR;
-    $('#swapLR').setAttribute('aria-pressed', state.transform.swapLR);
-    $('#swapLR').classList.toggle('active', state.transform.swapLR);
+  $('#swapLR').addEventListener('change', e => {
+    state.transform.swapLR = e.target.checked;
     player.setTransform({ swapLR: state.transform.swapLR });
     persistToSelectedJob();
   });
@@ -533,18 +526,12 @@ function applySettingsToUi(s) {
   state.filter = { ...s.filter };
   state.exif = s.exif;
 
-  document.querySelectorAll('button.chip[data-rot]').forEach(b => {
-    b.classList.toggle('active', parseInt(b.dataset.rot, 10) === s.transform.rotate);
+  document.querySelectorAll('input[name="rotate"]').forEach(r => {
+    r.checked = parseInt(r.value, 10) === s.transform.rotate;
   });
-  const setToggle = (id, on) => {
-    const el = $('#' + id);
-    if (!el) return;
-    el.setAttribute('aria-pressed', !!on);
-    el.classList.toggle('active', !!on);
-  };
-  setToggle('flipHBtn', s.transform.flipH);
-  setToggle('flipVBtn', s.transform.flipV);
-  setToggle('swapLR', s.transform.swapLR);
+  $('#flipH').checked = !!s.transform.flipH;
+  $('#flipV').checked = !!s.transform.flipV;
+  $('#swapLR').checked = !!s.transform.swapLR;
 
   const setSlider = (id, value, fmt) => {
     const inp = document.getElementById(id);
@@ -842,14 +829,14 @@ function setupKeyboardShortcuts() {
       const r = document.querySelector('input[name="viewMode"][value="sbs"]'); r.checked = true; r.dispatchEvent(new Event('change'));
     } else if (e.key.toLowerCase() === 'r') {
       const next = (state.transform.rotate + 90) % 360;
-      const btn = document.querySelector(`button.chip[data-rot="${next}"]`);
-      btn?.click();
+      const r = document.querySelector(`input[name="rotate"][value="${next}"]`);
+      if (r) { r.checked = true; r.dispatchEvent(new Event('change')); }
     } else if (e.key.toLowerCase() === 'h') {
-      $('#flipHBtn')?.click();
+      const c = $('#flipH'); if (c) { c.checked = !c.checked; c.dispatchEvent(new Event('change')); }
     } else if (e.key.toLowerCase() === 'v') {
-      $('#flipVBtn')?.click();
+      const c = $('#flipV'); if (c) { c.checked = !c.checked; c.dispatchEvent(new Event('change')); }
     } else if (e.key.toLowerCase() === 'x') {
-      $('#swapLR')?.click();
+      const c = $('#swapLR'); if (c) { c.checked = !c.checked; c.dispatchEvent(new Event('change')); }
     } else {
       handled = false;
     }

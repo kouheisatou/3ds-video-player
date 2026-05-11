@@ -49,8 +49,8 @@ body{
   background: var(--win-teal);
   color: var(--win-text);
   font-family: var(--font);
-  font-size: 11px;
-  line-height: 1.4;
+  font-size: 12px;
+  line-height: 1.55;
   height: 100vh;
   display: flex; flex-direction: column;
   -webkit-font-smoothing: none;
@@ -95,30 +95,34 @@ a:hover { color: #1010ff }
   box-shadow: 1px 1px 0 0 var(--win-white);
 }
 
-/* === Topbar = Win95 window title bar ================================== */
-.topbar{
-  display: flex; align-items: center; gap: 4px;
-  padding: 2px;
+/* === Single outer window =============================================== */
+body{ padding: 8px }
+.app-window{
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--win-silver);
   border-top: 2px solid var(--win-white);
   border-left: 2px solid var(--win-white);
   border-right: 2px solid var(--win-black);
   border-bottom: 2px solid var(--win-black);
+  box-shadow: inset 1px 1px 0 var(--win-light), inset -1px -1px 0 var(--win-dark);
+}
+
+/* === Topbar = the only title bar ====================================== */
+.topbar{
+  display: flex; align-items: center; gap: 6px;
+  padding: 3px;
   background: var(--win-silver);
   flex: 0 0 auto;
 }
-.topbar::before{
-  /* Active title bar slab inside the bordered chrome. */
-  content: "";
-  display: none;
-}
 .brand{
-  display: flex; align-items: center; gap: 6px;
+  display: flex; align-items: center; gap: 8px;
   background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
   color: #ffffff;
-  padding: 2px 6px;
+  padding: 4px 10px;
   font-weight: bold;
   flex: 1;
-  height: 22px;
+  height: 28px;
 }
 .brand .logo{ width: 18px; height: 18px; color: #ffffff }
 .brand h1{ font-size: 11px; color: #ffffff; font-weight: bold }
@@ -146,27 +150,28 @@ a:hover { color: #1010ff }
 }
 .ghlink:hover{ color: var(--win-text-inv); text-decoration: underline }
 
-/* === Layout =========================================================== */
+/* === Layout — single window with 3 internal sections ================== */
+html, body{ overflow: hidden }
+body{ display: flex; flex-direction: column; background: var(--win-teal) }
 .layout{
   flex: 1; min-height: 0; display: flex;
-  padding: 4px; gap: 0;
+  padding: 0;
   overflow: hidden;
-  background: var(--win-teal);
 }
 .workspace{
   flex: 1; min-height: 0; min-width: 0;
   display: grid;
-  grid-template-columns: 1fr 4px var(--queue-w, 380px);
+  grid-template-columns: 1fr 6px var(--queue-w, 380px);
   overflow: hidden;
   gap: 0;
 }
 @media (max-width: 980px){
-  .workspace{ grid-template-columns: 1fr; grid-template-rows: auto 4px 1fr }
+  .workspace{ grid-template-columns: 1fr; grid-template-rows: auto 6px 1fr }
   .splitter-v{ display: none }
 }
 .left-col{
   display: grid;
-  grid-template-rows: var(--preview-h, 1fr) 4px 1fr;
+  grid-template-rows: var(--preview-h, 1fr) 6px 1fr;
   min-height: 0; min-width: 0;
   overflow: hidden;
 }
@@ -174,31 +179,32 @@ a:hover { color: #1010ff }
 .left-col > .bottom-scroll{ min-height: 0 }
 .bottom-scroll{
   overflow-y: auto;
-  display: flex; flex-direction: column; gap: 6px;
-  padding: 0 4px 4px 0;
+  display: flex; flex-direction: column;
+  padding: 0;
 }
 
-/* === Splitters (Win95 splitter is just a thin sunken line) ============= */
-.splitter{ background: transparent; position: relative; user-select: none }
-.splitter-v{ cursor: col-resize; width: 4px; min-width: 4px }
-.splitter-h{ cursor: row-resize; height: 4px; min-height: 4px }
-.splitter::after{
-  content: "";
-  position: absolute;
-  background: var(--win-silver);
-  border-left: 1px solid var(--win-white);
-  border-top: 1px solid var(--win-white);
-  border-right: 1px solid var(--win-dark);
-  border-bottom: 1px solid var(--win-dark);
+/* === Splitters (thin sunken dividers) ================================== */
+.splitter{ background: var(--win-silver); position: relative; user-select: none }
+.splitter-v{ cursor: col-resize; width: 6px; min-width: 6px;
+  border-left: 1px solid var(--win-dark);
+  border-right: 1px solid var(--win-white);
 }
-.splitter-v::after{ top:0; bottom:0; left:0; right:0 }
-.splitter-h::after{ left:0; right:0; top:0; bottom:0 }
-.splitter:hover::after, .splitter.dragging::after{ background: var(--win-light) }
+.splitter-h{ cursor: row-resize; height: 6px; min-height: 6px;
+  border-top: 1px solid var(--win-dark);
+  border-bottom: 1px solid var(--win-white);
+}
+.splitter:hover, .splitter.dragging{ background: var(--win-light) }
 
-/* === Panels (preview card, info card, queue, modal) = Win95 windows ==== */
+/* === Sections inside the single window (no nested chrome) ============== */
 .preview-card,
 .file-header,
-.queue-section,
+.queue-section{
+  background: var(--win-silver);
+  border: none;
+  box-shadow: none;
+  color: var(--win-text);
+}
+/* The modal is still its own floating window */
 .modal{
   background: var(--win-silver);
   border-top: 2px solid var(--win-white);
@@ -206,7 +212,6 @@ a:hover { color: #1010ff }
   border-right: 2px solid var(--win-black);
   border-bottom: 2px solid var(--win-black);
   box-shadow: inset 1px 1px 0 var(--win-light), inset -1px -1px 0 var(--win-dark);
-  border-radius: 0;
   color: var(--win-text);
 }
 
@@ -235,107 +240,68 @@ a:hover { color: #1010ff }
 }
 
 .preview-controls{
-  display: flex; align-items: center; gap: 4px;
-  padding: 4px 6px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
   background: var(--win-silver);
-  border-top: 1px solid var(--win-white);
 }
-.preview-controls #playBtn{ min-width: 32px; padding: 2px 8px }
+.preview-controls #playBtn{ min-width: 36px; padding: 3px 10px }
 .preview-toolbar{
-  display: flex; align-items: center; gap: 6px;
-  padding: 4px 6px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 12px 8px;
   background: var(--win-silver);
-  border-top: 1px solid var(--win-white);
   flex-wrap: wrap;
 }
 .preview-adjust{
-  display: grid; grid-template-columns: repeat(5, minmax(140px, 1fr)) auto;
-  gap: 4px 12px; padding: 4px 6px;
-  border-top: 1px solid var(--win-white);
+  display: grid; grid-template-columns: repeat(5, minmax(160px, 1fr)) auto;
+  gap: 8px 20px; padding: 10px 12px 12px;
   background: var(--win-silver);
-  font-size: 11px;
+  font-size: 12px;
 }
-.preview-adjust .slider{ grid-template-columns: 56px 1fr 32px; font-size: 11px; gap: 4px }
+.preview-adjust .slider{ grid-template-columns: 60px 1fr 36px; font-size: 12px; gap: 8px }
 @media (max-width: 1400px){
   .preview-adjust{ grid-template-columns: repeat(2, 1fr) auto }
 }
 
 /* Time label */
 .time{
-  color: var(--win-text); font-size: 11px;
-  font-variant-numeric: tabular-nums; min-width: 80px;
-  padding: 0 4px;
+  color: var(--win-text); font-size: 12px;
+  font-variant-numeric: tabular-nums; min-width: 90px;
+  padding: 0 6px;
 }
 
-/* === Mode toggle (2D/SBS) = Win95 radio button group ================== */
-.mode-toggle{
-  display: flex; gap: 0; padding: 1px;
-  background: var(--win-silver);
-  border-top: 1px solid var(--win-dark);
-  border-left: 1px solid var(--win-dark);
-  border-right: 1px solid var(--win-white);
-  border-bottom: 1px solid var(--win-white);
+/* === Option groups (Win95 fieldset with legend) ======================= */
+.opt-group{
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+  padding: 6px 12px 8px;
+  margin: 0;
+  border: 1px solid var(--win-dark);
+  box-shadow: 1px 1px 0 var(--win-white);
+  background: transparent;
 }
-.mode-toggle label{
-  padding: 2px 10px; cursor: pointer; font-size: 11px;
-  user-select: none;
-  background: var(--win-silver);
-  border: 1px solid transparent;
+.opt-group > legend{
+  padding: 0 6px;
+  font-size: 11px; font-weight: bold; color: var(--win-text);
 }
-.mode-toggle input{ display: none }
-.mode-toggle label:hover{ background: var(--win-light) }
-.mode-toggle label:has(input:checked){
-  background: var(--win-silver);
-  border-top: 1px solid var(--win-dark);
-  border-left: 1px solid var(--win-dark);
-  border-right: 1px solid var(--win-white);
-  border-bottom: 1px solid var(--win-white);
-  color: var(--win-text);
-  font-weight: bold;
+.opt{
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--win-text);
+  cursor: pointer; user-select: none;
 }
-.mode-toggle input:disabled + *,
-.mode-toggle label:has(input:disabled){ color: var(--win-dark); cursor: not-allowed }
-
-/* === Toolbar group ==================================================== */
-.toolbar-group{
-  display: flex; gap: 0; padding: 1px;
-  background: var(--win-silver);
-  border-top: 1px solid var(--win-dark);
-  border-left: 1px solid var(--win-dark);
-  border-right: 1px solid var(--win-white);
-  border-bottom: 1px solid var(--win-white);
-}
-.toolbar-group .chip{
-  padding: 2px 8px; font-size: 11px;
-  background: var(--win-silver);
-  border: 1px solid transparent;
-  color: var(--win-text);
-  cursor: pointer;
-  border-radius: 0;
-  min-width: 26px;
-}
-.toolbar-group .chip:hover{ background: var(--win-light) }
-.toolbar-group .chip.active,
-.toolbar-group .chip[aria-pressed="true"]{
-  background: var(--win-silver);
-  border-top: 1px solid var(--win-dark);
-  border-left: 1px solid var(--win-dark);
-  border-right: 1px solid var(--win-white);
-  border-bottom: 1px solid var(--win-white);
-  font-weight: bold;
-}
+.opt input{ margin: 0 }
+.opt input:disabled + *{ color: var(--win-dark); cursor: not-allowed }
+.opt:has(input:disabled){ color: var(--win-dark); cursor: not-allowed }
 
 /* === Buttons (raised → pressed) ======================================= */
 .btn,
 .modal-actions button{
-  font-family: var(--font); font-size: 11px;
+  font-family: var(--font); font-size: 12px;
   background: var(--win-silver); color: var(--win-text);
   border-top: 2px solid var(--win-white);
   border-left: 2px solid var(--win-white);
   border-right: 2px solid var(--win-black);
   border-bottom: 2px solid var(--win-black);
   box-shadow: inset 1px 1px 0 var(--win-light), inset -1px -1px 0 var(--win-dark);
-  padding: 3px 12px; min-width: 60px;
+  padding: 5px 16px; min-width: 72px;
   cursor: pointer; border-radius: 0;
   position: relative;
 }
@@ -360,7 +326,7 @@ a:hover { color: #1010ff }
 }
 .btn.primary{ font-weight: bold }
 .btn.ghost{ /* same chrome */ }
-.btn.mini{ font-size: 11px; padding: 1px 8px; min-width: 0 }
+.btn.mini{ font-size: 11px; padding: 2px 10px; min-width: 0 }
 .btn.mini.ghost{ /* same */ }
 
 /* === Inputs (sunken) ================================================== */
@@ -369,14 +335,14 @@ input[type="number"],
 input[type="datetime-local"],
 select,
 textarea{
-  font-family: var(--font); font-size: 11px;
+  font-family: var(--font); font-size: 12px;
   background: var(--win-white); color: var(--win-text);
   border-top: 2px solid var(--win-dark);
   border-left: 2px solid var(--win-dark);
   border-right: 2px solid var(--win-white);
   border-bottom: 2px solid var(--win-white);
   box-shadow: inset 1px 1px 0 var(--win-black);
-  padding: 2px 4px;
+  padding: 4px 6px;
   border-radius: 0;
 }
 input:focus, select:focus, textarea:focus{ outline: 1px dotted var(--win-black); outline-offset: -3px }
@@ -411,9 +377,9 @@ option{ background: var(--win-white); color: var(--win-text) }
 /* === Sliders ========================================================== */
 .slider{
   display: grid;
-  grid-template-columns: 80px 1fr 40px;
-  gap: 6px; align-items: center;
-  font-size: 11px; color: var(--win-text);
+  grid-template-columns: 90px 1fr 44px;
+  gap: 10px; align-items: center;
+  font-size: 12px; color: var(--win-text);
 }
 .slider span{ color: var(--win-text) }
 .slider output{
@@ -517,29 +483,23 @@ input[type="radio"]:checked::after{
 }
 
 /* === File header & info list ========================================== */
-.file-header{ padding: 6px 8px }
-.fh-name-row{ display: flex; align-items: center; gap: 8px; justify-content: space-between }
-.fh-name{ font-weight: bold; font-size: 12px; color: var(--win-text); flex: 1; word-break: break-all }
-.fh-date{ font-size: 11px; color: var(--win-text); margin-bottom: 4px; font-variant-numeric: tabular-nums }
+.file-header{ padding: 14px 18px }
+.fh-name-row{ display: flex; align-items: center; gap: 12px; justify-content: space-between; margin-bottom: 4px }
+.fh-name{ font-weight: bold; font-size: 14px; color: var(--win-text); flex: 1; word-break: break-all }
+.fh-date{ font-size: 12px; color: var(--win-text); margin-bottom: 10px; font-variant-numeric: tabular-nums }
 
 .info-list{
-  margin: 6px 0 0; padding: 6px 8px;
-  background: var(--win-white);
-  border-top: 2px solid var(--win-dark);
-  border-left: 2px solid var(--win-dark);
-  border-right: 2px solid var(--win-white);
-  border-bottom: 2px solid var(--win-white);
-  box-shadow: inset 1px 1px 0 var(--win-black);
+  margin: 8px 0 0; padding: 0;
+  background: transparent;
+  border: none; box-shadow: none;
   display: flex; flex-direction: column;
 }
 .info-row{
-  display: grid; grid-template-columns: 130px 1fr auto;
-  gap: 8px; align-items: center;
-  padding: 2px 0;
-  border-top: 1px dotted var(--win-light);
-  font-size: 11px;
+  display: grid; grid-template-columns: 140px 1fr auto;
+  gap: 12px; align-items: center;
+  padding: 5px 0;
+  font-size: 12px;
 }
-.info-row:first-child{ border-top: none }
 .info-row .info-label{ color: var(--win-text); font-weight: bold }
 .info-row .info-value{ color: var(--win-text); word-break: break-all }
 .info-row .info-value.modified{ color: var(--win-navy); font-weight: bold }
@@ -562,11 +522,11 @@ input[type="radio"]:checked::after{
 .info-section{
   font-size: 11px; color: var(--win-text); font-weight: bold;
   padding: 8px 0 2px;
-  border-top: 1px solid var(--win-dark);
-  margin-top: 4px;
+  margin-top: 6px;
+  border-bottom: 1px solid var(--win-dark);
   text-transform: none; letter-spacing: 0;
 }
-.info-section:first-child{ border-top: none; padding-top: 0; margin-top: 0 }
+.info-section:first-child{ padding-top: 0; margin-top: 0 }
 .info-empty{ padding: 4px 0; color: var(--win-dark) }
 .exif-readonly-inline{
   font-family: var(--font-mono); font-size: 11px;
@@ -578,8 +538,8 @@ input[type="radio"]:checked::after{
 
 /* === Queue section ==================================================== */
 .queue-section{
-  padding: 6px;
-  display: flex; flex-direction: column; gap: 4px;
+  padding: 8px 10px;
+  display: flex; flex-direction: column; gap: 6px;
   min-height: 0; overflow: hidden;
 }
 .queue-section.dragover{
@@ -588,22 +548,18 @@ input[type="radio"]:checked::after{
 }
 .queue-head{
   display: flex; justify-content: space-between; align-items: center;
-  background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
-  color: #ffffff;
-  padding: 2px 6px;
-  margin: -6px -6px 4px -6px;
-  font-weight: bold;
+  padding: 0 0 4px;
+  border-bottom: 1px solid var(--win-dark);
 }
-.queue-head .section-title{ color: #ffffff; font-size: 11px; margin: 0; text-transform: none; letter-spacing: 0 }
-.queue-actions{ display: flex; gap: 2px }
+.queue-head .section-title{ color: var(--win-text); font-size: 11px; margin: 0; font-weight: bold; text-transform: none; letter-spacing: 0 }
+.queue-actions{ display: flex; gap: 4px }
 .queue-actions .btn{ padding: 1px 8px; min-width: 50px }
 
 .common-settings{
   display: flex; flex-direction: column; gap: 4px;
-  padding: 6px;
-  background: var(--win-silver);
-  border-top: 1px solid var(--win-white); border-left: 1px solid var(--win-white);
-  border-right: 1px solid var(--win-dark); border-bottom: 1px solid var(--win-dark);
+  padding: 0;
+  background: transparent;
+  border: none;
   font-size: 11px;
 }
 .common-settings .field{ gap: 2px }
@@ -612,8 +568,8 @@ input[type="radio"]:checked::after{
 .common-settings .slider{ grid-template-columns: 60px 1fr 30px; gap: 4px; font-size: 11px }
 
 .queue-list{
-  list-style: none; margin: 0; padding: 4px;
-  display: flex; flex-direction: column; gap: 3px;
+  list-style: none; margin: 0; padding: 2px;
+  display: flex; flex-direction: column; gap: 2px;
   overflow-y: auto;
   flex: 1; min-height: 0;
   background: var(--win-white);
