@@ -165,9 +165,57 @@ body{ display: flex; flex-direction: column; background: var(--win-teal) }
   overflow: hidden;
   gap: 0;
 }
-@media (max-width: 980px){
-  .workspace{ grid-template-columns: 1fr; grid-template-rows: auto 6px 1fr }
-  .splitter-v{ display: none }
+/* Tablet: tighten queue column */
+@media (max-width: 1180px){
+  .workspace{ grid-template-columns: 1fr 6px minmax(260px, 320px); }
+  .preview-adjust{ grid-template-columns: repeat(2, 1fr) auto }
+}
+/* Narrow tablet / large mobile: stack queue under content */
+@media (max-width: 860px){
+  .workspace{
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) 6px minmax(180px, var(--queue-h, 280px));
+  }
+  /* Reorient the existing vertical splitter as a horizontal divider */
+  .splitter-v{
+    width: auto; min-width: 0; height: 6px;
+    cursor: row-resize;
+    border-left: none; border-right: none;
+    border-top: 1px solid var(--win-dark);
+    border-bottom: 1px solid var(--win-white);
+  }
+}
+/* Mobile: bump font, larger tap targets, single-column rows */
+@media (max-width: 560px){
+  body{ font-size: 13px }
+  .layout{ padding: 0 }
+  .app-window{ border: none; box-shadow: none }
+  .brand{ height: 32px; font-size: 13px }
+  .topbar{ padding: 4px }
+  .preview-controls,
+  .preview-toolbar,
+  .preview-adjust{ padding: 8px; gap: 8px }
+  .preview-adjust{ grid-template-columns: 1fr }
+  .opt-group{ padding: 6px 10px 8px; gap: 8px }
+  .opt{ font-size: 13px; min-height: 28px }
+  .btn{ padding: 7px 14px; min-width: 64px; font-size: 13px }
+  .info-row{
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 2px 10px;
+    padding: 8px 0;
+    border-bottom: 1px dotted var(--win-dark);
+  }
+  .info-row .info-label{ font-size: 11px; color: var(--win-dark); grid-column: 1; grid-row: 1 }
+  .info-row .info-value{ grid-column: 1; grid-row: 2 }
+  .info-row .edit-btn{
+    grid-column: 2; grid-row: 1 / span 2;
+    align-self: center; width: 32px; height: 26px;
+  }
+  .queue-item{ grid-template-columns: auto 1fr auto; padding: 8px }
+  .q-thumb{ width: 44px; height: 32px }
+  .file-header{ padding: 10px 12px }
+  .queue-section{ padding: 8px }
 }
 .left-col{
   display: grid;
