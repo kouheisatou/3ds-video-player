@@ -143,7 +143,6 @@ async function loadFileForPreview(file, job = null) {
     document.body.classList.add('kind-' + kind);
     updateFileHeader();
     updateMetaPanel();
-    $('#restoreAllBtn').disabled = false;
     applyAllUiToPlayer();
   } catch (err) {
     console.error(err);
@@ -304,14 +303,10 @@ function openFieldEditDialog(key) {
     ? `<div class="field-edit-orig">元: ${escapeHtml(field.display ? field.display(originalRaw) : String(originalRaw))}</div>`
     : '';
   body.innerHTML = `<label>${escapeHtml(field.label)}</label>${inputHtml}${originalLabel}`;
-  if (edited != null && edited !== '') {
-    body.innerHTML += `<button id="fieldEditClearBtn" type="button" class="btn mini ghost" style="align-self:flex-start">この項目を元に戻す</button>`;
-  }
   dlg.showModal();
   setTimeout(() => $('#fieldEditInput').focus(), 0);
 
   const saveBtn = $('#fieldEditSaveBtn');
-  const clearBtn = $('#fieldEditClearBtn');
   const onSave = (e) => {
     const val = $('#fieldEditInput').value;
     if (val === '' || val == null) {
@@ -326,12 +321,6 @@ function openFieldEditDialog(key) {
     ga('exif_edited', { key });
   };
   saveBtn.onclick = onSave;
-  if (clearBtn) clearBtn.onclick = () => {
-    clearEditValue(state.exif || {}, key);
-    persistToSelectedJob();
-    updateMetaPanel();
-    dlg.close();
-  };
 }
 
 
@@ -411,19 +400,6 @@ function setupSettings() {
       persistToSelectedJob();
     });
   }
-  $('#resetColor').addEventListener('click', () => {
-    ['brightness','contrast','saturation','hue'].forEach(id => document.getElementById(id).value = 0);
-    document.getElementById('gamma').value = 100;
-    state.filter = { brightness:0, contrast:0, saturation:0, gamma:1, hue:0 };
-    document.querySelectorAll('.slider').forEach(s => {
-      const inp = s.querySelector('input'), out = s.querySelector('output');
-      const id = inp.id;
-      out.value = id === 'gamma' ? '1.00' : (id === 'hue' ? '0°' : '0');
-    });
-    player.setFilter(state.filter);
-    persistToSelectedJob();
-  });
-
   // Common (queue-wide) settings
   const q = $('#jpegQuality'), qOut = q.nextElementSibling;
   qOut.value = q.value;
@@ -448,17 +424,6 @@ function setupSettings() {
     applyCommonToAllJobs();
   });
 
-  $('#restoreAllBtn').addEventListener('click', () => {
-    state.transform = { rotate: 0, flipH: false, flipV: false, swapLR: false };
-    state.filter = { brightness:0, contrast:0, saturation:0, gamma:1, hue:0 };
-    state.exif = null;
-    applySettingsToUi({ transform: state.transform, filter: state.filter, exif: null });
-    player.setTransform(state.transform);
-    player.setFilter(state.filter);
-    persistToSelectedJob();
-    updateMetaPanel();
-    ga('restore_all');
-  });
 }
 
 // 90°/270° rotation makes stereoscopic disparity vertical, breaking 3D viewing.
@@ -511,7 +476,6 @@ function setupQueueActions() {
       document.body.classList.remove('kind-video', 'kind-image');
       updateFileHeader();
       updateMetaPanel();
-      $('#restoreAllBtn').disabled = true;
     }
     refreshQueueUi();
   });
@@ -658,7 +622,7 @@ function refreshQueueUi() {
       ${j.thumbUrl ? `<img class="q-thumb" src="${j.thumbUrl}" alt="">` : `<div class="q-thumb"></div>`}
       <div class="q-info">
         <span class="q-name">${escapeHtml(j.name)}</span>
-        <div class="q-detail">${j.kind === 'video' ? '🎞️' : '🖼️'} ${labelOutput(j.settings.outputFormat)}</div>
+        <div class="q-detail">${labelOutput(j.settings.outputFormat)}</div>
       </div>
       <div class="q-actions">
         ${j.blob
@@ -700,8 +664,8 @@ function labelStatus(j) {
 }
 function labelOutput(fmt) {
   const map = {
-    'mp4-2d-l':'MP4 2D 左', 'mp4-2d-r':'MP4 2D 右', 'mp4-sbs':'MP4 SBS', 'mp4-tab':'MP4 TaB', 'mp4-anaglyph':'MP4 アナグリフ',
-    'jpg-2d-l':'JPEG 2D 左','jpg-2d-r':'JPEG 2D 右','jpg-sbs':'JPEG SBS','jpg-tab':'JPEG TaB','jpg-anaglyph':'JPEG アナグリフ',
+    'mp4-2d-l':'MP4 2D 左', 'mp4-2d-r':'MP4 2D 右', 'mp4-sbs':'MP4 サイドバイサイド', 'mp4-tab':'MP4 上下', 'mp4-anaglyph':'MP4 アナグリフ',
+    'jpg-2d-l':'JPEG 2D 左','jpg-2d-r':'JPEG 2D 右','jpg-sbs':'JPEG サイドバイサイド','jpg-tab':'JPEG 上下','jpg-anaglyph':'JPEG アナグリフ',
     'mpo':'MPO 再パック',
   };
   return map[fmt] || fmt;
@@ -715,7 +679,9 @@ function dlName(j) {
 }
 
 async function runQueue() {
-  ga('convert_start', { count: state.queue.filter(j=>j.status==='pending').length });
+  const pending = state.queue.filter(j => j.status === 'pending');
+  ga('convert_start', { count: pending.length });
+  const justFinished = [];
   for (const job of state.queue) {
     if (job.status !== 'pending') continue;
     job.status = 'processing';
@@ -727,6 +693,7 @@ async function runQueue() {
       job.blob = blob;
       job.progress = 1;
       job.status = 'done';
+      justFinished.push(job);
       ga('convert_done', { format: job.settings.outputFormat, ms, output_size: blob.size });
     } catch (err) {
       console.error('[Queue]', err);
@@ -735,6 +702,44 @@ async function runQueue() {
       ga('convert_error', { reason: err.message });
     }
     refreshQueueUi();
+  }
+  // Auto-download all successful conversions from this run as a single .zip.
+  if (justFinished.length > 0) {
+    await downloadZip(justFinished);
+  }
+}
+
+async function downloadZip(jobs) {
+  try {
+    const { buildZip } = await import('./encoders/zip.js?v=20');
+    const entries = [];
+    const seen = new Map();
+    for (const j of jobs) {
+      let name = dlName(j);
+      // Avoid name collisions if user dropped two files with the same base.
+      const n = seen.get(name) || 0;
+      seen.set(name, n + 1);
+      if (n > 0) {
+        const dot = name.lastIndexOf('.');
+        name = dot > 0 ? `${name.slice(0, dot)}_${n}${name.slice(dot)}` : `${name}_${n}`;
+      }
+      const bytes = new Uint8Array(await j.blob.arrayBuffer());
+      entries.push({ name, bytes });
+    }
+    const zipBlob = buildZip(entries);
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `3ds-export-${ts}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    ga('zip_download', { count: jobs.length, size: zipBlob.size });
+  } catch (err) {
+    console.error('[ZIP]', err);
+    ga('zip_error', { reason: err.message });
   }
 }
 

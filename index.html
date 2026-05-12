@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>3DS 3D Media Studio — 3D動画/写真プレイヤー&コンバーター</title>
 <meta name="description" content="ニンテンドー3DSで撮影した3D動画(.AVI)と3D写真(.MPO)をブラウザで再生・変換・編集">
-<link rel="stylesheet" href="style.css?v=win95-2">
+<link rel="stylesheet" href="style.css?v=win95-4">
 
 <!-- Google Analytics 4 (placeholder ID — replace G-XXXXXXXXXX with your real ID) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
@@ -51,7 +51,7 @@
           <fieldset class="opt-group">
             <legend>表示</legend>
             <label class="opt"><input type="radio" name="viewMode" value="2d" checked> 2D</label>
-            <label class="opt"><input type="radio" name="viewMode" value="sbs"> SBS</label>
+            <label class="opt"><input type="radio" name="viewMode" value="sbs"> サイドバイサイド</label>
           </fieldset>
           <fieldset class="opt-group">
             <legend>回転</legend>
@@ -73,7 +73,6 @@
           <label class="slider"><span>彩度</span><input type="range" id="saturation" min="-100" max="100" value="0"><output>0</output></label>
           <label class="slider"><span>ガンマ</span><input type="range" id="gamma" min="50" max="200" value="100"><output>1.00</output></label>
           <label class="slider"><span>色相</span><input type="range" id="hue" min="-180" max="180" value="0"><output>0°</output></label>
-          <button id="resetColor" type="button" class="btn mini" title="色調整リセット">↺</button>
         </div>
       </section>
 
@@ -84,7 +83,6 @@
         <div id="fileHeader" class="file-header">
           <div class="fh-name-row">
             <span class="fh-name" id="fhName">ファイル未選択</span>
-            <button id="restoreAllBtn" class="btn mini ghost" type="button" disabled title="この項目の編集をすべて元に戻す">↺ 元に戻す</button>
           </div>
           <div class="fh-date" id="fhDate"></div>
           <dl id="infoList" class="info-list" aria-live="polite"></dl>
@@ -111,7 +109,7 @@
           <select id="outputFormatVideo" class="kind-row">
             <option value="mp4-2d-l">MP4 — 2D 左目</option>
             <option value="mp4-2d-r">MP4 — 2D 右目</option>
-            <option value="mp4-sbs" selected>MP4 — SBS (横並び)</option>
+            <option value="mp4-sbs" selected>MP4 — サイドバイサイド</option>
             <option value="mp4-tab">MP4 — Top/Bottom (上下)</option>
             <option value="mp4-anaglyph">MP4 — アナグリフ赤青</option>
           </select>
@@ -121,7 +119,7 @@
           <select id="outputFormatImage" class="kind-row">
             <option value="jpg-2d-l">JPEG — 2D 左目</option>
             <option value="jpg-2d-r">JPEG — 2D 右目</option>
-            <option value="jpg-sbs" selected>JPEG — SBS (横並び)</option>
+            <option value="jpg-sbs" selected>JPEG — サイドバイサイド</option>
             <option value="jpg-tab">JPEG — Top/Bottom</option>
             <option value="jpg-anaglyph">JPEG — アナグリフ</option>
             <option value="mpo">MPO — 再パック</option>

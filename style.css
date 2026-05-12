@@ -348,29 +348,33 @@ textarea{
 input:focus, select:focus, textarea:focus{ outline: 1px dotted var(--win-black); outline-offset: -3px }
 select{
   appearance: none;
-  padding-right: 22px;
-  background: var(--win-white)
-    linear-gradient(45deg, transparent 50%, var(--win-text) 50%) calc(100% - 12px) 50% / 4px 4px no-repeat,
-    linear-gradient(135deg, var(--win-text) 50%, transparent 50%) calc(100% - 8px) 50% / 4px 4px no-repeat,
-    var(--win-silver);
-  background-color: var(--win-white);
-}
-/* Better: pure Win95 select with a raised arrow box on the right */
-select{
-  background: var(--win-white);
-  background-image:
-    linear-gradient(var(--win-silver), var(--win-silver));
-  background-repeat: no-repeat;
-  background-position: right 0 top 0;
-  background-size: 18px 100%;
-  appearance: none;
-  padding-right: 24px;
-}
-/* Add chevron via attribute trick — actually use SVG data URI for arrow + bevel */
-select{
-  background: var(--win-white)
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='0' y='0' width='16' height='16' fill='%23c0c0c0' stroke='%23ffffff' stroke-width='1'/><rect x='0' y='0' width='15' height='15' fill='none' stroke='%23808080' stroke-width='1'/><polygon points='4,6 12,6 8,11' fill='%23000000'/></svg>")
-    no-repeat right 1px center / 16px 16px;
+  -webkit-appearance: none;
+  padding-right: 26px;
+  /* Win95 dropdown: raised button on the right with outset bevel + black ▼ */
+  background:
+    /* triangle */
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 5'><polygon points='0,0 8,0 4,5' fill='%23000000'/></svg>")
+      no-repeat right 8px center / 8px 5px,
+    /* shadow on bottom-right of the arrow box */
+    linear-gradient(var(--win-black), var(--win-black))
+      right 0 top 0 / 1px 100% no-repeat,
+    linear-gradient(var(--win-black), var(--win-black))
+      right 0 bottom 0 / 100% 1px no-repeat,
+    /* inner shadow */
+    linear-gradient(var(--win-dark), var(--win-dark))
+      right 1px top 1px / 1px calc(100% - 2px) no-repeat,
+    linear-gradient(var(--win-dark), var(--win-dark))
+      right 1px bottom 1px / calc(100% - 1px) 1px no-repeat,
+    /* white highlight on top/left of the arrow box */
+    linear-gradient(var(--win-white), var(--win-white))
+      right 22px top 0 / 1px 100% no-repeat,
+    linear-gradient(var(--win-white), var(--win-white))
+      right 1px top 1px / 22px 1px no-repeat,
+    /* silver fill of the arrow box */
+    linear-gradient(var(--win-silver), var(--win-silver))
+      right 0 top 0 / 22px 100% no-repeat,
+    /* input background */
+    var(--win-white);
 }
 option{ background: var(--win-white); color: var(--win-text) }
 
@@ -586,11 +590,10 @@ input[type="radio"]:checked::after{
   color: var(--win-text); text-align: center;
 }
 .queue-empty .dz-icon{
-  font-size: 24px; color: var(--win-navy);
-  width: 32px; height: 32px; display: grid; place-items: center;
-  background: var(--win-silver);
-  border-top: 2px solid var(--win-white); border-left: 2px solid var(--win-white);
-  border-right: 2px solid var(--win-black); border-bottom: 2px solid var(--win-black);
+  font-size: 32px; color: var(--win-dark);
+  width: auto; height: auto;
+  background: transparent; border: none;
+  display: block;
 }
 .queue-empty .dz-title{ font-size: 11px; color: var(--win-text); font-weight: bold }
 .queue-empty .dz-sub{ font-size: 11px; color: var(--win-text) }
@@ -640,22 +643,27 @@ input[type="radio"]:checked::after{
 .q-status.done .q-status-text{ color: #007800; font-weight: bold }
 .q-status.error .q-status-text{ color: var(--err); font-weight: bold }
 .q-actions{ display: flex; gap: 4px; align-items: center }
-.q-dl{
-  font-size: 11px; padding: 1px 6px;
-  background: var(--win-silver); color: var(--win-navy);
-  border-top: 1px solid var(--win-white); border-left: 1px solid var(--win-white);
-  border-right: 1px solid var(--win-black); border-bottom: 1px solid var(--win-black);
-  text-decoration: none;
+.q-dl, .q-remove{
+  display: inline-grid; place-items: center;
+  height: 22px; min-width: 36px;
+  padding: 0 8px;
+  font-size: 11px; font-family: var(--font);
+  background: var(--win-silver); color: var(--win-text);
+  border-top: 2px solid var(--win-white);
+  border-left: 2px solid var(--win-white);
+  border-right: 2px solid var(--win-black);
+  border-bottom: 2px solid var(--win-black);
+  box-shadow: inset 1px 1px 0 var(--win-light), inset -1px -1px 0 var(--win-dark);
+  text-decoration: none; cursor: pointer;
+  box-sizing: border-box;
 }
+.q-dl{ color: var(--win-navy); font-weight: bold }
+.q-remove{ width: 26px; min-width: 26px }
 .q-dl.disabled,.q-dl[disabled]{ pointer-events: none; color: var(--win-dark); text-shadow: 1px 1px 0 var(--win-white) }
-.q-remove{
-  background: var(--win-silver); border: none; cursor: pointer;
-  width: 18px; height: 16px; padding: 0; font-size: 11px;
-  border-top: 1px solid var(--win-white); border-left: 1px solid var(--win-white);
-  border-right: 1px solid var(--win-black); border-bottom: 1px solid var(--win-black);
-  color: var(--win-text);
+.q-dl:active, .q-remove:active{
+  border-color: var(--win-black) var(--win-white) var(--win-white) var(--win-black);
+  box-shadow: inset 1px 1px 0 var(--win-dark), inset -1px -1px 0 var(--win-light);
 }
-.q-remove:hover{ background: var(--win-light) }
 .q-thumb{
   width: 36px; height: 28px; background: #000; flex-shrink: 0; object-fit: cover;
   border-top: 1px solid var(--win-dark); border-left: 1px solid var(--win-dark);
