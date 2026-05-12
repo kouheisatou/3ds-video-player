@@ -777,16 +777,27 @@ function setupWindows() {
   const wins = [...document.querySelectorAll('.win')];
   let zCounter = 10;
 
-  // Default tiled layout (computed at start; respects desktop size).
+  // Default tiled layout:
+  //   ┌──────────────┬───────┐
+  //   │   playback   │       │
+  //   │              │ queue │
+  //   ├──────┬───────┤       │
+  //   │ info │ edit  │       │
+  //   └──────┴───────┴───────┘
+  //   queue width ≈ 1/3 viewport, full height.
   const placeDefaults = () => {
     const dw = desktop.clientWidth;
     const dh = desktop.clientHeight;
-    const gap = 4;
+    const queueW = Math.max(280, Math.round(dw / 3));
+    const leftW  = Math.max(360, dw - queueW);
+    const halfLeftW = Math.floor(leftW / 2);
+    const topH   = Math.max(220, Math.round(dh * 0.62));
+    const bottomH = Math.max(140, dh - topH);
     const layout = {
-      playback: { x: gap, y: gap, w: Math.max(360, Math.round(dw * 0.6) - gap*1.5), h: Math.max(280, Math.round(dh * 0.62) - gap*1.5) },
-      edit:     { x: Math.round(dw * 0.6) + gap*0.5, y: gap, w: Math.max(280, dw - Math.round(dw * 0.6) - gap*1.5), h: Math.max(280, Math.round(dh * 0.62) - gap*1.5) },
-      info:     { x: gap, y: Math.round(dh * 0.62) + gap*0.5, w: Math.max(360, Math.round(dw * 0.6) - gap*1.5), h: Math.max(160, dh - Math.round(dh * 0.62) - gap*1.5) },
-      queue:    { x: Math.round(dw * 0.6) + gap*0.5, y: Math.round(dh * 0.62) + gap*0.5, w: Math.max(280, dw - Math.round(dw * 0.6) - gap*1.5), h: Math.max(160, dh - Math.round(dh * 0.62) - gap*1.5) },
+      playback: { x: 0,         y: 0,    w: leftW,            h: topH },
+      info:     { x: 0,         y: topH, w: halfLeftW,        h: bottomH },
+      edit:     { x: halfLeftW, y: topH, w: leftW - halfLeftW, h: bottomH },
+      queue:    { x: leftW,     y: 0,    w: queueW,           h: dh },
     };
     for (const w of wins) {
       const id = w.dataset.win;
@@ -800,7 +811,7 @@ function setupWindows() {
 
   // Restore saved geometry; fall back to defaults.
   let saved;
-  try { saved = JSON.parse(localStorage.getItem('ui:windows') || '{}'); } catch { saved = {}; }
+  try { saved = JSON.parse(localStorage.getItem('ui:windows:v2') || '{}'); } catch { saved = {}; }
   let hasAnySaved = false;
   for (const w of wins) {
     const id = w.dataset.win;
@@ -827,7 +838,7 @@ function setupWindows() {
         max: w.classList.contains('maximized'),
       };
     }
-    localStorage.setItem('ui:windows', JSON.stringify(data));
+    localStorage.setItem('ui:windows:v2', JSON.stringify(data));
   };
 
   const focusWin = (w) => {
