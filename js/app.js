@@ -1044,41 +1044,120 @@ function seekRelative(deltaSec) {
   player.seek(t);
 }
 
-// === Tutorial (dolphin assistant) =====================================
+// === Tutorial (Kairu the dolphin) =====================================
 const TUTORIAL_STEPS = [
-  'ようこそ!3DS 3D Media Studio へ。\n3DS で撮った AVI / MPO をブラウザで再生・変換できるよ。',
-  '右の『キュー』ウィンドウへ .AVI / .MPO ファイルをドラッグ&ドロップしてみて。複数まとめてOK!',
-  '『編集』ウィンドウで回転や色を調整。表示モードを『サイドバイサイド』にすると左右並列の3D出力になるよ。',
-  '『変換』ボタンを押すと、変換結果がまとめて ZIP で自動ダウンロードされるよ。',
-  'ウィンドウは自由に移動・最小化・最大化できる。位置は次回も覚えてくれるよ。それじゃ、楽しんで!',
+  { text: 'ようこそ。3DS 3D Media Studio をご紹介します。3DS で撮影した AVI / MPO をブラウザで再生・変換できます。', target: 'center' },
+  { text: '右の「キュー」ウィンドウへ .AVI / .MPO ファイルをドラッグ&ドロップしてください。複数ファイルをまとめて投入できます。', target: '.win[data-win="queue"]' },
+  { text: '「編集」ウィンドウで回転や色を調整できます。表示モードを「サイドバイサイド」にすると左右並列の3D出力になります。', target: '.win[data-win="edit"]' },
+  { text: '「再生」ウィンドウで変換前のプレビューを確認できます。', target: '.win[data-win="playback"]' },
+  { text: '「変換」ボタンを押すと、変換結果がまとめて ZIP で自動ダウンロードされます。', target: '#runQueueBtn' },
+  { text: 'ウィンドウは自由に移動・最小化・最大化できます。位置は次回も保持されます。それでは、お楽しみください。', target: 'taskbar' },
 ];
 let tutorialStep = 0;
+let tutorialUserDragged = false;
+
 function showTutorial() {
   tutorialStep = 0;
+  tutorialUserDragged = false;
+  const t = $('#tutorial');
+  t.hidden = false;
   renderTutorial();
-  $('#tutorial').hidden = false;
+  positionTutorial();
 }
 function hideTutorial() {
   $('#tutorial').hidden = true;
   localStorage.setItem('ui:tutorialSeen', '1');
 }
 function renderTutorial() {
-  const txt = TUTORIAL_STEPS[tutorialStep] || '';
-  $('#tutorialText').innerText = txt;
+  const s = TUTORIAL_STEPS[tutorialStep] || TUTORIAL_STEPS[0];
+  $('#tutorialText').innerText = s.text;
   $('#tutorialStep').textContent = `${tutorialStep + 1} / ${TUTORIAL_STEPS.length}`;
   $('#tutorialPrev').disabled = tutorialStep === 0;
   $('#tutorialNext').textContent = tutorialStep === TUTORIAL_STEPS.length - 1 ? '閉じる' : '次へ';
 }
-document.addEventListener('click', (e) => {
-  if (e.target.id === 'tutorialNext') {
-    if (tutorialStep >= TUTORIAL_STEPS.length - 1) hideTutorial();
-    else { tutorialStep++; renderTutorial(); }
-  } else if (e.target.id === 'tutorialPrev') {
-    if (tutorialStep > 0) { tutorialStep--; renderTutorial(); }
-  } else if (e.target.id === 'tutorialSkip') {
-    hideTutorial();
+function positionTutorial() {
+  const t = $('#tutorial');
+  if (!t || t.hidden) return;
+  const s = TUTORIAL_STEPS[tutorialStep];
+  const vw = window.innerWidth, vh = window.innerHeight;
+  // Show off-screen first so we can measure size, then place precisely.
+  t.style.visibility = 'hidden';
+  const rect = t.getBoundingClientRect();
+  const tw = rect.width || 360, th = rect.height || 180;
+  let cx, cy; // anchor: center of the area we want to point at
+  if (s.target === 'center') {
+    cx = vw / 2; cy = vh / 2;
+  } else if (s.target === 'taskbar') {
+    cx = vw / 2; cy = vh - 14;
+  } else {
+    const el = document.querySelector(s.target);
+    if (el) {
+      const r = el.getBoundingClientRect();
+      cx = r.left + r.width / 2;
+      cy = r.top + r.height / 2;
+    } else {
+      cx = vw / 2; cy = vh / 2;
+    }
   }
-});
+  // Place tutorial so its bottom-right tail roughly points at (cx,cy).
+  // We want the bubble's tail (bottom-right of bubble) near the target.
+  let left = cx - tw + 60;
+  let top  = cy - th - 20;
+  // Clamp into viewport.
+  left = Math.max(8, Math.min(vw - tw - 8, left));
+  top  = Math.max(8, Math.min(vh - th - 32, top)); // 32 = taskbar height
+  t.style.left = left + 'px';
+  t.style.top  = top  + 'px';
+  t.style.visibility = '';
+}
+
+function setupTutorialDragAndButtons() {
+  const t = $('#tutorial');
+  const dolphin = t?.querySelector('.tutorial-dolphin');
+  if (!dolphin) return;
+  // Drag the entire tutorial by grabbing the dolphin.
+  dolphin.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    tutorialUserDragged = true;
+    const startX = e.clientX, startY = e.clientY;
+    const startLeft = t.offsetLeft, startTop = t.offsetTop;
+    t.classList.add('dragging');
+    const onMove = (ev) => {
+      let nx = startLeft + (ev.clientX - startX);
+      let ny = startTop + (ev.clientY - startY);
+      const vw = window.innerWidth, vh = window.innerHeight;
+      nx = Math.max(-(t.offsetWidth - 40), Math.min(vw - 20, nx));
+      ny = Math.max(0, Math.min(vh - 30, ny));
+      t.style.left = nx + 'px';
+      t.style.top  = ny + 'px';
+    };
+    const onUp = () => {
+      t.classList.remove('dragging');
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+  $('#tutorialNext')?.addEventListener('click', () => {
+    if (tutorialStep >= TUTORIAL_STEPS.length - 1) { hideTutorial(); return; }
+    tutorialStep++;
+    renderTutorial();
+    positionTutorial(); // always reposition on step change (per user request)
+  });
+  $('#tutorialPrev')?.addEventListener('click', () => {
+    if (tutorialStep > 0) {
+      tutorialStep--;
+      renderTutorial();
+      positionTutorial();
+    }
+  });
+  $('#tutorialSkip')?.addEventListener('click', () => hideTutorial());
+  window.addEventListener('resize', () => {
+    if (!t.hidden && !tutorialUserDragged) positionTutorial();
+  });
+}
+setupTutorialDragAndButtons();
 
 function cycleSelection(direction) {
   if (state.queue.length === 0) return;

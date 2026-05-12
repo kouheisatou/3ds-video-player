@@ -251,65 +251,68 @@ body{ display: block; background: var(--win-teal); padding: 0 }
 }
 .tray-clock{ font-size: 11px; color: var(--win-text); font-variant-numeric: tabular-nums }
 
-/* === Tutorial (dolphin assistant) ===================================== */
+/* === Tutorial (Kairu the dolphin) ===================================== */
 .tutorial{
-  position: fixed; right: 16px; bottom: 44px;
+  position: absolute;
   z-index: 200;
-  display: flex; align-items: flex-end; gap: 8px;
+  display: flex; align-items: flex-end; gap: 4px;
   pointer-events: none;
+  transition: left .4s ease, top .4s ease;
 }
+.tutorial[hidden]{ display: none }
 .tutorial-dolphin{
   width: 96px; height: 96px;
   image-rendering: pixelated;
   display: block;
   filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.4));
-  animation: tutorialBob 2.4s ease-in-out infinite;
+  cursor: grab;
   pointer-events: auto;
+  flex: 0 0 auto;
 }
-@keyframes tutorialBob {
-  0%, 100% { transform: translateY(0) }
-  50%      { transform: translateY(-6px) }
-}
+.tutorial-dolphin:active{ cursor: grabbing }
+.tutorial.dragging{ transition: none }
 .tutorial-bubble{
   position: relative;
-  max-width: 280px;
-  background: var(--win-white);
-  border-top: 2px solid var(--win-white);
-  border-left: 2px solid var(--win-white);
-  border-right: 2px solid var(--win-black);
-  border-bottom: 2px solid var(--win-black);
-  box-shadow: inset 1px 1px 0 var(--win-light), inset -1px -1px 0 var(--win-dark),
-              4px 4px 0 rgba(0,0,0,0.3);
+  max-width: 260px;
+  background: #fffbe5;
+  border: 1px solid #000000;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.25);
   padding: 12px 14px;
   pointer-events: auto;
-  color: var(--win-text);
+  color: #000000;
+  font-family: var(--font);
 }
-/* Bubble tail pointing to dolphin (right side) */
+/* Bubble tail at bottom-right pointing toward the dolphin */
 .tutorial-bubble::after{
   content: "";
   position: absolute;
-  right: -10px; bottom: 28px;
+  right: 16px; bottom: -10px;
   width: 0; height: 0;
-  border-top: 8px solid transparent;
-  border-bottom: 8px solid transparent;
-  border-left: 12px solid var(--win-white);
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 10px solid #fffbe5;
 }
 .tutorial-bubble::before{
   content: "";
   position: absolute;
-  right: -13px; bottom: 27px;
+  right: 15px; bottom: -12px;
   width: 0; height: 0;
-  border-top: 9px solid transparent;
-  border-bottom: 9px solid transparent;
-  border-left: 13px solid var(--win-black);
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-top: 11px solid #000000;
 }
 .tutorial-text{
   font-size: 13px; line-height: 1.55;
   margin-bottom: 10px;
+  white-space: pre-line;
 }
 .tutorial-actions{
   display: flex; align-items: center; gap: 6px;
   font-size: 11px;
+}
+.tutorial-actions .btn{
+  background: var(--win-silver);
+  font-size: 11px; padding: 3px 10px; min-width: 0;
 }
 .tutorial-step{ flex: 1; color: var(--win-dark) }
 

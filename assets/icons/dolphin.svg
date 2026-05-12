@@ -1,53 +1,108 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" shape-rendering="crispEdges">
-  <!-- Background bubble shadow -->
-  <rect x="6" y="38" width="36" height="2" fill="#a0c0d8"/>
-  <!-- Tail fin -->
-  <polygon points="2,18 8,22 8,28 2,32 6,25" fill="#3a5a78"/>
-  <polygon points="3,20 8,23 8,27 3,30" fill="#5a7898"/>
-  <!-- Body (main rounded shape) -->
-  <rect x="8" y="22" width="2" height="8" fill="#5a7898"/>
-  <rect x="10" y="20" width="2" height="12" fill="#5a7898"/>
-  <rect x="12" y="18" width="2" height="14" fill="#5a7898"/>
-  <rect x="14" y="16" width="2" height="16" fill="#5a7898"/>
-  <rect x="16" y="14" width="14" height="20" fill="#5a7898"/>
-  <rect x="30" y="14" width="2" height="20" fill="#5a7898"/>
-  <rect x="32" y="16" width="2" height="18" fill="#5a7898"/>
-  <rect x="34" y="18" width="2" height="14" fill="#5a7898"/>
-  <rect x="36" y="20" width="2" height="10" fill="#5a7898"/>
-  <rect x="38" y="22" width="2" height="6" fill="#5a7898"/>
-  <!-- Top dorsal fin -->
-  <polygon points="22,14 28,14 26,8 24,8" fill="#3a5a78"/>
-  <polygon points="23,13 27,13 26,9 24,9" fill="#5a7898"/>
-  <!-- Top highlight (lighter) -->
-  <rect x="16" y="14" width="14" height="2" fill="#80a0c0"/>
-  <rect x="14" y="16" width="2" height="2" fill="#80a0c0"/>
-  <rect x="30" y="16" width="2" height="2" fill="#80a0c0"/>
-  <!-- White belly -->
-  <rect x="12" y="28" width="20" height="4" fill="#ffffff"/>
-  <rect x="14" y="32" width="16" height="2" fill="#ffffff"/>
-  <rect x="16" y="34" width="12" height="1" fill="#ffffff"/>
-  <!-- Belly edge shadow -->
-  <rect x="12" y="27" width="20" height="1" fill="#d0d8e0"/>
-  <!-- Nose / beak -->
-  <rect x="40" y="22" width="2" height="4" fill="#5a7898"/>
-  <rect x="42" y="23" width="2" height="3" fill="#5a7898"/>
-  <rect x="44" y="24" width="1" height="2" fill="#5a7898"/>
-  <!-- Mouth line -->
-  <rect x="38" y="26" width="6" height="1" fill="#000000"/>
+  <!-- ===== Kairu the dolphin (Office Assistant style) ===== -->
+  <!-- Body color palette: bright cyan-blue, light highlight, dark shadow -->
+
+  <!-- Tail (back fin) - left side -->
+  <polygon points="1,18 6,21 6,28 1,32 4,25" fill="#0a4a7a"/>
+  <polygon points="3,20 6,22 6,27 3,30 5,25" fill="#1e7ac0"/>
+
+  <!-- Body (curved leaping pose) -->
+  <!-- Outer outline (darker blue) -->
+  <rect x="6" y="20" width="2" height="9" fill="#0a4a7a"/>
+  <rect x="8" y="18" width="2" height="11" fill="#0a4a7a"/>
+  <rect x="10" y="16" width="2" height="13" fill="#0a4a7a"/>
+  <rect x="12" y="14" width="2" height="13" fill="#0a4a7a"/>
+  <rect x="14" y="13" width="2" height="13" fill="#0a4a7a"/>
+  <rect x="16" y="12" width="2" height="13" fill="#0a4a7a"/>
+  <rect x="18" y="11" width="2" height="13" fill="#0a4a7a"/>
+  <rect x="20" y="10" width="2" height="14" fill="#0a4a7a"/>
+  <rect x="22" y="9"  width="2" height="14" fill="#0a4a7a"/>
+  <rect x="24" y="8"  width="2" height="14" fill="#0a4a7a"/>
+  <rect x="26" y="7"  width="2" height="13" fill="#0a4a7a"/>
+  <rect x="28" y="7"  width="2" height="12" fill="#0a4a7a"/>
+  <rect x="30" y="8"  width="2" height="11" fill="#0a4a7a"/>
+  <rect x="32" y="10" width="2" height="9"  fill="#0a4a7a"/>
+  <rect x="34" y="12" width="2" height="7"  fill="#0a4a7a"/>
+  <rect x="36" y="14" width="2" height="5"  fill="#0a4a7a"/>
+  <rect x="38" y="16" width="2" height="3"  fill="#0a4a7a"/>
+
+  <!-- Body main fill (bright blue) -->
+  <rect x="8"  y="21" width="2" height="6" fill="#1e7ac0"/>
+  <rect x="10" y="18" width="2" height="9" fill="#1e7ac0"/>
+  <rect x="12" y="16" width="2" height="10" fill="#1e7ac0"/>
+  <rect x="14" y="15" width="2" height="10" fill="#1e7ac0"/>
+  <rect x="16" y="14" width="2" height="10" fill="#1e7ac0"/>
+  <rect x="18" y="13" width="2" height="10" fill="#1e7ac0"/>
+  <rect x="20" y="12" width="2" height="10" fill="#1e7ac0"/>
+  <rect x="22" y="11" width="2" height="11" fill="#1e7ac0"/>
+  <rect x="24" y="10" width="2" height="11" fill="#1e7ac0"/>
+  <rect x="26" y="9"  width="2" height="10" fill="#1e7ac0"/>
+  <rect x="28" y="9"  width="2" height="9"  fill="#1e7ac0"/>
+  <rect x="30" y="10" width="2" height="8"  fill="#1e7ac0"/>
+  <rect x="32" y="12" width="2" height="6"  fill="#1e7ac0"/>
+  <rect x="34" y="14" width="2" height="4"  fill="#1e7ac0"/>
+  <rect x="36" y="16" width="2" height="2"  fill="#1e7ac0"/>
+
+  <!-- Top highlight (lighter cyan) -->
+  <rect x="14" y="14" width="2" height="1" fill="#5cc0f0"/>
+  <rect x="16" y="13" width="2" height="1" fill="#5cc0f0"/>
+  <rect x="18" y="12" width="2" height="1" fill="#5cc0f0"/>
+  <rect x="20" y="11" width="2" height="1" fill="#5cc0f0"/>
+  <rect x="22" y="10" width="2" height="1" fill="#5cc0f0"/>
+  <rect x="24" y="9"  width="2" height="1" fill="#5cc0f0"/>
+  <rect x="26" y="8"  width="2" height="1" fill="#5cc0f0"/>
+  <rect x="28" y="8"  width="2" height="1" fill="#5cc0f0"/>
+  <rect x="30" y="9"  width="2" height="1" fill="#5cc0f0"/>
+  <rect x="32" y="11" width="2" height="1" fill="#5cc0f0"/>
+
+  <!-- Dorsal fin (top) -->
+  <polygon points="22,12 28,12 26,3 24,3" fill="#0a4a7a"/>
+  <polygon points="23,11 27,11 26,4 24,4" fill="#1e7ac0"/>
+  <polygon points="24,10 26,10 25,5" fill="#5cc0f0"/>
+
+  <!-- White belly (lower curve) -->
+  <rect x="10" y="27" width="2" height="2" fill="#ffffff"/>
+  <rect x="12" y="26" width="2" height="3" fill="#ffffff"/>
+  <rect x="14" y="25" width="2" height="3" fill="#ffffff"/>
+  <rect x="16" y="24" width="2" height="3" fill="#ffffff"/>
+  <rect x="18" y="23" width="2" height="3" fill="#ffffff"/>
+  <rect x="20" y="22" width="2" height="3" fill="#ffffff"/>
+  <rect x="22" y="22" width="2" height="3" fill="#ffffff"/>
+  <rect x="24" y="21" width="2" height="3" fill="#ffffff"/>
+  <rect x="26" y="19" width="2" height="3" fill="#ffffff"/>
+  <rect x="28" y="18" width="2" height="3" fill="#ffffff"/>
+  <rect x="30" y="18" width="2" height="2" fill="#ffffff"/>
+  <rect x="32" y="18" width="2" height="2" fill="#ffffff"/>
+  <rect x="34" y="18" width="2" height="2" fill="#ffffff"/>
+
+  <!-- Belly shading (faint grey edge) -->
+  <rect x="10" y="29" width="2" height="1" fill="#c0d0d8"/>
+  <rect x="12" y="29" width="2" height="1" fill="#c0d0d8"/>
+  <rect x="14" y="28" width="2" height="1" fill="#c0d0d8"/>
+  <rect x="16" y="27" width="2" height="1" fill="#c0d0d8"/>
+  <rect x="18" y="26" width="2" height="1" fill="#c0d0d8"/>
+  <rect x="20" y="25" width="2" height="1" fill="#c0d0d8"/>
+  <rect x="22" y="25" width="2" height="1" fill="#c0d0d8"/>
+  <rect x="24" y="24" width="2" height="1" fill="#c0d0d8"/>
+
+  <!-- Nose / beak (forward) -->
+  <rect x="38" y="18" width="2" height="2" fill="#1e7ac0"/>
+  <rect x="40" y="18" width="2" height="2" fill="#1e7ac0"/>
+  <rect x="38" y="20" width="2" height="1" fill="#0a4a7a"/>
+  <rect x="40" y="20" width="2" height="1" fill="#0a4a7a"/>
+  <!-- Belly continues to nose underside -->
+  <rect x="36" y="20" width="2" height="1" fill="#ffffff"/>
+
+  <!-- Smile / mouth line -->
+  <rect x="36" y="21" width="6" height="1" fill="#000000"/>
+
   <!-- Eye -->
-  <rect x="33" y="20" width="3" height="3" fill="#ffffff"/>
-  <rect x="34" y="21" width="2" height="2" fill="#000000"/>
-  <rect x="34" y="21" width="1" height="1" fill="#ffffff"/>
-  <!-- Pectoral fin -->
-  <polygon points="20,30 24,30 24,36 18,34" fill="#3a5a78"/>
-  <polygon points="20,30 24,30 24,33 20,32" fill="#5a7898"/>
-  <!-- Outline (dark edge) -->
-  <rect x="14" y="14" width="2" height="1" fill="#2a4060"/>
-  <rect x="30" y="14" width="2" height="1" fill="#2a4060"/>
-  <rect x="12" y="16" width="2" height="1" fill="#2a4060"/>
-  <rect x="32" y="16" width="2" height="1" fill="#2a4060"/>
-  <rect x="10" y="18" width="2" height="1" fill="#2a4060"/>
-  <rect x="34" y="18" width="2" height="1" fill="#2a4060"/>
-  <rect x="8" y="20" width="2" height="1" fill="#2a4060"/>
-  <rect x="36" y="20" width="2" height="1" fill="#2a4060"/>
+  <rect x="31" y="13" width="4" height="4" fill="#ffffff"/>
+  <rect x="32" y="14" width="3" height="3" fill="#000000"/>
+  <rect x="32" y="14" width="1" height="1" fill="#ffffff"/>
+
+  <!-- Pectoral fin (front side, extends down) -->
+  <polygon points="18,24 24,24 24,32 16,30" fill="#0a4a7a"/>
+  <polygon points="19,24 23,24 23,30 18,29" fill="#1e7ac0"/>
+  <polygon points="20,24 22,24 22,27" fill="#5cc0f0"/>
 </svg>
