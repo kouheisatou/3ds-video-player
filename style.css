@@ -702,8 +702,8 @@ input[type="radio"]:checked::after{
 body:not(.kind-video) .video-only{ display: none !important }
 body:not(.kind-image) .image-only{ display: none !important }
 body.kind-image #playBtn,
-body.kind-image #seekBar,
-body.kind-image #timeLabel{ display: none !important }
+body.kind-image #seekBar{ display: none !important }
+body.kind-image #timeLabel{ color: var(--win-dark) }
 
 /* === Misc fields ====================================================== */
 .field{ display: flex; flex-direction: column; gap: 4px; min-width: 0 }

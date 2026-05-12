@@ -201,8 +201,9 @@ void main() {
   }
 
   // 5. Sample textures.
-  //    eyeUV is in top-left convention; flip Y for GL texture coords.
-  vec2 texUV = vec2(eyeUV.x, 1.0 - eyeUV.y);
+  //    The texture was uploaded with UNPACK_FLIP_Y_WEBGL=false, so texel (s,t)=(0,0)
+  //    corresponds to the top-left of the source image — same orientation as eyeUV.
+  vec2 texUV = eyeUV;
 
   if (uMode == 4) {
     // Anaglyph: left eye R + right eye GB, both sampled at the same UV.

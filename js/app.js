@@ -109,6 +109,11 @@ async function handleFiles(files) {
 async function selectJob(jobId) {
   const job = state.queue.find(x => x.id === jobId);
   if (!job) return;
+  // Stop any audio/video playback before switching files.
+  if (player.playing) {
+    player.pause();
+    $('#playBtn').textContent = '▶';
+  }
   state.selectedJobId = jobId;
   // Apply this job's stored settings to the UI before previewing.
   applySettingsToUi(job.settings);
@@ -134,7 +139,7 @@ async function loadFileForPreview(file, job = null) {
       kind = 'image';
       $('#playBtn').disabled = true;
       $('#seekBar').disabled = true;
-      $('#timeLabel').textContent = '';
+      $('#timeLabel').textContent = '— / —';
     } else {
       throw new Error('未対応の拡張子: ' + ext);
     }
