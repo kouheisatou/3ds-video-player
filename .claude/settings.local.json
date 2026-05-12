@@ -9,7 +9,13 @@
       "Bash(xargs kill *)",
       "Bash(python3 /tmp/no-cache-server.py 8765)",
       "Bash(curl -sI http://localhost:8765/index.html)",
-      "Bash(curl -sI http://localhost:8765/style.css)"
+      "Bash(curl -sI http://localhost:8765/style.css)",
+      "Bash(git rebase *)",
+      "Bash(git merge *)",
+      "Bash(git push *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(rsvg-convert *)"
     ]
   }
 }
