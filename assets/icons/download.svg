@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <!-- Down arrow shaft -->
+  <rect x="6" y="2" width="4" height="6" fill="#000080"/>
+  <!-- Arrow head -->
+  <polygon points="3,7 13,7 8,12" fill="#000080"/>
+  <!-- Tray / bottom line -->
+  <rect x="2" y="13" width="12" height="2" fill="#000000"/>
+  <rect x="2" y="13" width="12" height="1" fill="#808080"/>
+</svg>

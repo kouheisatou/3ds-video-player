@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>3DS 3D Media Studio — 3D動画/写真プレイヤー&コンバーター</title>
 <meta name="description" content="ニンテンドー3DSで撮影した3D動画(.AVI)と3D写真(.MPO)をブラウザで再生・変換・編集">
-<link rel="stylesheet" href="style.css?v=win95-resp2">
+<link rel="stylesheet" href="style.css?v=icons">
 
 <!-- Google Analytics 4 (placeholder ID — replace G-XXXXXXXXXX with your real ID) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
@@ -17,85 +17,109 @@
 </script>
 </head>
 <body>
-<div class="app-window">
-<header class="topbar">
-  <div class="brand">
-    <svg class="logo" viewBox="0 0 24 24" aria-hidden="true">
-      <rect x="3" y="2" width="18" height="9" fill="none" stroke="currentColor" stroke-width="1.6"/>
-      <rect x="5.5" y="4" width="13" height="5" fill="currentColor" opacity="0.55"/>
-      <line x1="3" y1="11.5" x2="21" y2="11.5" stroke="currentColor" stroke-width="1.2" opacity="0.7"/>
-      <rect x="3" y="13" width="18" height="9" fill="none" stroke="currentColor" stroke-width="1.6"/>
-      <rect x="5.5" y="15" width="13" height="5" fill="currentColor" opacity="0.35"/>
-      <circle cx="17.5" cy="20.5" r="0.6" fill="currentColor"/>
-      <circle cx="19" cy="20.5" r="0.6" fill="currentColor"/>
-    </svg>
-    <h1>3DS 3D Media Studio</h1>
-    <button id="queueToggleBtn" class="titlebar-btn queue-toggle" type="button" title="キューを開閉" aria-expanded="false">≡ キュー</button>
-  </div>
-</header>
 
-<main class="layout">
-  <div class="workspace" id="workspace">
-    <!-- Left: Preview (top) + scrollable details (bottom) -->
-    <div class="left-col" id="leftCol">
-      <section class="preview-card">
-        <div class="preview-stage">
-          <canvas id="previewCanvas" width="480" height="240" aria-label="プレビュー"></canvas>
-          <div id="previewEmpty" class="preview-empty">右のキューにファイルをドロップしてください</div>
-        </div>
-        <div class="preview-controls">
-          <button id="playBtn" class="btn primary" disabled title="再生/一時停止 (Space)">▶</button>
-          <input id="seekBar" class="seek" type="range" min="0" max="1000" value="0" disabled>
-          <span id="timeLabel" class="time">0:00 / 0:00</span>
-        </div>
-        <div class="preview-toolbar">
-          <fieldset class="opt-group">
-            <legend>表示</legend>
-            <label class="opt"><input type="radio" name="viewMode" value="2d" checked> 2D</label>
-            <label class="opt"><input type="radio" name="viewMode" value="sbs"> サイドバイサイド</label>
-          </fieldset>
-          <fieldset class="opt-group">
-            <legend>回転</legend>
-            <label class="opt"><input type="radio" name="rotate" value="0" checked> 0°</label>
-            <label class="opt"><input type="radio" name="rotate" value="90"> 90°</label>
-            <label class="opt"><input type="radio" name="rotate" value="180"> 180°</label>
-            <label class="opt"><input type="radio" name="rotate" value="270"> 270°</label>
-          </fieldset>
-          <fieldset class="opt-group">
-            <legend>反転</legend>
-            <label class="opt"><input type="checkbox" id="flipH"> 水平</label>
-            <label class="opt"><input type="checkbox" id="flipV"> 垂直</label>
-            <label class="opt"><input type="checkbox" id="swapLR"> 左右入替</label>
-          </fieldset>
-        </div>
-        <div class="preview-adjust">
-          <label class="slider"><span>明度</span><input type="range" id="brightness" min="-100" max="100" value="0"><output>0</output></label>
-          <label class="slider"><span>コントラスト</span><input type="range" id="contrast" min="-100" max="100" value="0"><output>0</output></label>
-          <label class="slider"><span>彩度</span><input type="range" id="saturation" min="-100" max="100" value="0"><output>0</output></label>
-          <label class="slider"><span>ガンマ</span><input type="range" id="gamma" min="50" max="200" value="100"><output>1.00</output></label>
-          <label class="slider"><span>色相</span><input type="range" id="hue" min="-180" max="180" value="0"><output>0°</output></label>
-        </div>
-      </section>
+<!-- Desktop area: holds all floating windows -->
+<div class="desktop" id="desktop">
 
-      <div class="splitter splitter-h" id="splitterH" role="separator" aria-orientation="horizontal" title="ドラッグで高さ変更"></div>
-
-      <!-- Scrollable bottom: unified file info + EXIF, vertically stacked -->
-      <div class="bottom-scroll">
-        <div id="fileHeader" class="file-header">
-          <div class="fh-name-row">
-            <span class="fh-name" id="fhName">ファイル未選択</span>
-          </div>
-          <div class="fh-date" id="fhDate"></div>
-          <dl id="infoList" class="info-list" aria-live="polite"></dl>
-        </div>
-      </div><!-- /.bottom-scroll -->
+  <!-- Window: 再生 -->
+  <section class="win" data-win="playback" aria-label="再生ウィンドウ">
+    <header class="win-titlebar">
+      <img class="win-icon" src="assets/icons/playback.svg" alt="">
+      <span class="win-title">再生</span>
+      <div class="win-controls">
+        <button class="win-btn" data-act="min" title="最小化" tabindex="-1"><img src="assets/icons/win-min.svg" alt="_"></button>
+        <button class="win-btn" data-act="max" title="最大化" tabindex="-1"><img src="assets/icons/win-max.svg" alt="□"></button>
+        <button class="win-btn" data-act="close" title="閉じる" tabindex="-1"><img src="assets/icons/win-close.svg" alt="×"></button>
+      </div>
+    </header>
+    <div class="win-body win-body-flex">
+      <div class="preview-stage">
+        <canvas id="previewCanvas" width="480" height="240" aria-label="プレビュー"></canvas>
+        <div id="previewEmpty" class="preview-empty">キューウィンドウからファイルを選択してください</div>
+      </div>
+      <div class="preview-controls">
+        <button id="playBtn" class="btn primary" disabled title="再生/一時停止 (Space)"><img class="play-icon" src="assets/icons/play.svg" alt="▶"></button>
+        <input id="seekBar" class="seek" type="range" min="0" max="1000" value="0" disabled>
+        <span id="timeLabel" class="time">0:00 / 0:00</span>
+      </div>
     </div>
+  </section>
 
-    <div class="splitter splitter-v" id="splitterV" role="separator" aria-orientation="vertical" title="ドラッグで幅変更"></div>
+  <!-- Window: 編集 -->
+  <section class="win" data-win="edit" aria-label="編集ウィンドウ">
+    <header class="win-titlebar">
+      <img class="win-icon" src="assets/icons/edit.svg" alt="">
+      <span class="win-title">編集</span>
+      <div class="win-controls">
+        <button class="win-btn" data-act="min" title="最小化" tabindex="-1"><img src="assets/icons/win-min.svg" alt="_"></button>
+        <button class="win-btn" data-act="max" title="最大化" tabindex="-1"><img src="assets/icons/win-max.svg" alt="□"></button>
+        <button class="win-btn" data-act="close" title="閉じる" tabindex="-1"><img src="assets/icons/win-close.svg" alt="×"></button>
+      </div>
+    </header>
+    <div class="win-body">
+      <fieldset class="opt-group">
+        <legend>表示</legend>
+        <label class="opt"><input type="radio" name="viewMode" value="2d" checked> 2D</label>
+        <label class="opt"><input type="radio" name="viewMode" value="sbs"> サイドバイサイド</label>
+      </fieldset>
+      <fieldset class="opt-group">
+        <legend>回転</legend>
+        <label class="opt"><input type="radio" name="rotate" value="0" checked> 0°</label>
+        <label class="opt"><input type="radio" name="rotate" value="90"> 90°</label>
+        <label class="opt"><input type="radio" name="rotate" value="180"> 180°</label>
+        <label class="opt"><input type="radio" name="rotate" value="270"> 270°</label>
+      </fieldset>
+      <fieldset class="opt-group">
+        <legend>反転</legend>
+        <label class="opt"><input type="checkbox" id="flipH"> 水平</label>
+        <label class="opt"><input type="checkbox" id="flipV"> 垂直</label>
+        <label class="opt"><input type="checkbox" id="swapLR"> 左右入替</label>
+      </fieldset>
+      <fieldset class="opt-group">
+        <legend>色調整</legend>
+        <label class="slider"><span>明度</span><input type="range" id="brightness" min="-100" max="100" value="0"><output>0</output></label>
+        <label class="slider"><span>コントラスト</span><input type="range" id="contrast" min="-100" max="100" value="0"><output>0</output></label>
+        <label class="slider"><span>彩度</span><input type="range" id="saturation" min="-100" max="100" value="0"><output>0</output></label>
+        <label class="slider"><span>ガンマ</span><input type="range" id="gamma" min="50" max="200" value="100"><output>1.00</output></label>
+        <label class="slider"><span>色相</span><input type="range" id="hue" min="-180" max="180" value="0"><output>0°</output></label>
+      </fieldset>
+    </div>
+  </section>
 
-    <div id="queueBackdrop" class="queue-backdrop" aria-hidden="true"></div>
-    <!-- Right: Queue (also acts as drop target) -->
-    <section id="queueSection" class="queue-section">
+  <!-- Window: 詳細 -->
+  <section class="win" data-win="info" aria-label="詳細ウィンドウ">
+    <header class="win-titlebar">
+      <img class="win-icon" src="assets/icons/info.svg" alt="">
+      <span class="win-title">詳細</span>
+      <div class="win-controls">
+        <button class="win-btn" data-act="min" title="最小化" tabindex="-1"><img src="assets/icons/win-min.svg" alt="_"></button>
+        <button class="win-btn" data-act="max" title="最大化" tabindex="-1"><img src="assets/icons/win-max.svg" alt="□"></button>
+        <button class="win-btn" data-act="close" title="閉じる" tabindex="-1"><img src="assets/icons/win-close.svg" alt="×"></button>
+      </div>
+    </header>
+    <div class="win-body">
+      <div id="fileHeader" class="file-header">
+        <div class="fh-name-row">
+          <span class="fh-name" id="fhName">ファイル未選択</span>
+        </div>
+        <div class="fh-date" id="fhDate"></div>
+        <dl id="infoList" class="info-list" aria-live="polite"></dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- Window: キュー -->
+  <section class="win" data-win="queue" aria-label="キューウィンドウ" id="queueWin">
+    <header class="win-titlebar">
+      <img class="win-icon" src="assets/icons/queue.svg" alt="">
+      <span class="win-title">キュー</span>
+      <div class="win-controls">
+        <button class="win-btn" data-act="min" title="最小化" tabindex="-1"><img src="assets/icons/win-min.svg" alt="_"></button>
+        <button class="win-btn" data-act="max" title="最大化" tabindex="-1"><img src="assets/icons/win-max.svg" alt="□"></button>
+        <button class="win-btn" data-act="close" title="閉じる" tabindex="-1"><img src="assets/icons/win-close.svg" alt="×"></button>
+      </div>
+    </header>
+    <div class="win-body win-body-flex" id="queueSection">
       <div class="queue-head">
         <h2 class="section-title">変換キュー</h2>
         <div class="queue-actions">
@@ -104,11 +128,10 @@
         </div>
       </div>
 
-      <!-- Common settings — apply to entire queue -->
       <div class="common-settings">
         <div class="field">
           <label>出力フォーマット(動画)</label>
-          <select id="outputFormatVideo" class="kind-row">
+          <select id="outputFormatVideo">
             <option value="mp4-2d-l">MP4 — 2D 左目</option>
             <option value="mp4-2d-r">MP4 — 2D 右目</option>
             <option value="mp4-sbs" selected>MP4 — サイドバイサイド</option>
@@ -118,7 +141,7 @@
         </div>
         <div class="field">
           <label>出力フォーマット(画像)</label>
-          <select id="outputFormatImage" class="kind-row">
+          <select id="outputFormatImage">
             <option value="jpg-2d-l">JPEG — 2D 左目</option>
             <option value="jpg-2d-r">JPEG — 2D 右目</option>
             <option value="jpg-sbs" selected>JPEG — サイドバイサイド</option>
@@ -133,7 +156,7 @@
 
       <ul id="queueList" class="queue-list" aria-live="polite">
         <li class="queue-empty">
-          <div class="dz-icon">⤓</div>
+          <img class="dz-icon" src="assets/icons/download.svg" alt="">
           <div class="dz-title">.AVI / .MPO をここにドロップ</div>
           <div class="dz-sub">複数同時可</div>
           <div class="empty-actions">
@@ -145,11 +168,28 @@
           </div>
         </li>
       </ul>
-    </section>
-  </div>
-</main>
+    </div>
+  </section>
 
-</div><!-- /.app-window -->
+</div><!-- /.desktop -->
+
+<!-- Taskbar -->
+<footer class="taskbar" id="taskbar">
+  <button class="start-btn" id="startBtn" type="button">
+    <img class="start-logo" src="assets/icons/start.svg" alt="">
+    <span class="start-text">スタート</span>
+  </button>
+  <div class="taskbar-divider"></div>
+  <div class="taskbar-items" id="taskbarItems">
+    <button class="task-item" data-show="playback"><img class="task-icon" src="assets/icons/playback.svg" alt=""> 再生</button>
+    <button class="task-item" data-show="edit"><img class="task-icon" src="assets/icons/edit.svg" alt=""> 編集</button>
+    <button class="task-item" data-show="info"><img class="task-icon" src="assets/icons/info.svg" alt=""> 詳細</button>
+    <button class="task-item" data-show="queue"><img class="task-icon" src="assets/icons/queue.svg" alt=""> キュー</button>
+  </div>
+  <div class="taskbar-tray">
+    <span class="tray-clock" id="trayClock">--:--</span>
+  </div>
+</footer>
 
 <!-- Single-field edit dialog -->
 <dialog id="fieldEditDialog" class="modal modal-small">
@@ -163,6 +203,6 @@
   </form>
 </dialog>
 
-<script type="module" src="js/app.js?v=20"></script>
+<script type="module" src="js/app.js?v=mdi"></script>
 </body>
 </html>

@@ -95,181 +95,163 @@ a:hover { color: #1010ff }
   box-shadow: 1px 1px 0 0 var(--win-white);
 }
 
-/* === Single outer window =============================================== */
-body{ padding: 8px }
-.app-window{
-  flex: 1; min-height: 0;
+/* === Desktop + MDI windows + Taskbar =================================== */
+html, body{ overflow: hidden }
+body{ display: block; background: var(--win-teal); padding: 0 }
+
+.desktop{
+  position: fixed; left: 0; top: 0; right: 0;
+  bottom: 28px; /* leave room for taskbar */
+  overflow: hidden;
+  background: var(--win-teal);
+}
+
+/* Win95 floating window */
+.win{
+  position: absolute;
   display: flex; flex-direction: column;
+  min-width: 240px; min-height: 120px;
   background: var(--win-silver);
   border-top: 2px solid var(--win-white);
   border-left: 2px solid var(--win-white);
   border-right: 2px solid var(--win-black);
   border-bottom: 2px solid var(--win-black);
   box-shadow: inset 1px 1px 0 var(--win-light), inset -1px -1px 0 var(--win-dark);
+  resize: both;
+  overflow: hidden;
 }
-
-/* === Topbar = the only title bar ====================================== */
-.topbar{
-  display: flex; align-items: center; gap: 6px;
-  padding: 3px;
-  background: var(--win-silver);
+.win.minimized{ display: none }
+.win.maximized{
+  left: 0 !important; top: 0 !important;
+  width: 100% !important; height: 100% !important;
+  resize: none;
+}
+.win-titlebar{
+  display: flex; align-items: center; gap: 4px;
+  height: 22px; padding: 2px 2px 2px 4px;
+  background: var(--win-dark); /* inactive */
+  color: var(--win-light);
+  cursor: move; user-select: none;
   flex: 0 0 auto;
 }
-.brand{
-  display: flex; align-items: center; gap: 8px;
+.win.active .win-titlebar{
   background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
   color: #ffffff;
-  padding: 4px 10px;
-  font-weight: bold;
-  flex: 1;
-  height: 28px;
 }
-.brand .logo{ width: 18px; height: 18px; color: #ffffff }
-.brand h1{ font-size: 11px; color: #ffffff; font-weight: bold }
-.titlebar-buttons{ display: flex; gap: 2px }
-.titlebar-btn{
-  width: 18px; height: 18px; padding: 0;
-  background: var(--win-silver);
+.win-icon{
+  display: inline-block;
+  width: 16px; height: 16px;
+  flex: 0 0 auto;
+  image-rendering: pixelated;
+}
+.win-title{ flex: 1; font-weight: bold; font-size: 11px; padding-left: 2px }
+.win-controls{ display: flex; gap: 2px }
+.win-btn{
+  width: 18px; height: 16px; padding: 0;
+  background: var(--win-silver); color: var(--win-text);
   border-top: 1px solid var(--win-white);
   border-left: 1px solid var(--win-white);
   border-right: 1px solid var(--win-black);
   border-bottom: 1px solid var(--win-black);
-  box-shadow: inset -1px -1px 0 var(--win-dark);
+  box-shadow: inset 1px 1px 0 var(--win-light), inset -1px -1px 0 var(--win-dark);
   font-family: var(--font); font-size: 10px; font-weight: bold;
-  color: var(--win-black);
   cursor: pointer;
   display: grid; place-items: center;
+  border-radius: 0;
 }
-.titlebar-btn:active{
+.win-btn > img{
+  width: 14px; height: 12px;
+  image-rendering: pixelated;
+  display: block;
+}
+.win-btn:active{
   border-color: var(--win-black) var(--win-white) var(--win-white) var(--win-black);
   box-shadow: inset 1px 1px 0 var(--win-dark);
 }
-.ghlink{
-  color: var(--win-text-inv); font-size: 11px;
-  padding: 2px 8px; text-decoration: none;
+.win-body{
+  flex: 1; min-height: 0; overflow: auto;
+  padding: 8px;
+  display: flex; flex-direction: column; gap: 8px;
 }
-.ghlink:hover{ color: var(--win-text-inv); text-decoration: underline }
+.win-body-flex{ overflow: hidden; padding: 0; gap: 0 }
+.win-body-flex > .preview-stage{ flex: 1 }
 
-/* === Layout — single window with 3 internal sections ================== */
-html, body{ overflow: hidden }
-body{ display: flex; flex-direction: column; background: var(--win-teal) }
-.layout{
-  flex: 1; min-height: 0; display: flex;
-  padding: 0;
-  overflow: hidden;
+/* === Taskbar ========================================================== */
+.taskbar{
+  position: fixed; left: 0; right: 0; bottom: 0;
+  height: 28px;
+  background: var(--win-silver);
+  border-top: 2px solid var(--win-white);
+  box-shadow: inset 0 1px 0 var(--win-light);
+  display: flex; align-items: center; gap: 4px;
+  padding: 2px 4px;
+  z-index: 100;
 }
-.workspace{
-  flex: 1; min-height: 0; min-width: 0;
-  display: grid;
-  grid-template-columns: 1fr 6px var(--queue-w, 380px);
-  overflow: hidden;
-  gap: 0;
+.start-btn{
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 0 6px; height: 22px; min-width: 0;
+  background: var(--win-silver); color: var(--win-text);
+  border-top: 2px solid var(--win-white);
+  border-left: 2px solid var(--win-white);
+  border-right: 2px solid var(--win-black);
+  border-bottom: 2px solid var(--win-black);
+  box-shadow: inset 1px 1px 0 var(--win-light), inset -1px -1px 0 var(--win-dark);
+  font-family: var(--font); font-size: 11px; font-weight: bold;
+  cursor: pointer; border-radius: 0;
 }
-/* Tablet: tighten queue column */
-@media (max-width: 1180px){
-  .workspace{ grid-template-columns: 1fr 6px minmax(260px, 320px); }
-  .preview-adjust{ grid-template-columns: repeat(2, 1fr) auto }
+.start-btn:active{
+  border-color: var(--win-black) var(--win-white) var(--win-white) var(--win-black);
+  box-shadow: inset 1px 1px 0 var(--win-dark);
 }
-/* Narrow tablet / mobile: queue slides in from the right when toggled */
-@media (max-width: 860px){
-  .workspace{
-    grid-template-columns: 1fr;
-    grid-template-rows: minmax(0, 1fr);
-  }
-  .splitter-v{ display: none }
-  .queue-toggle{ display: inline-flex }
-  .queue-section{
-    position: fixed;
-    top: 0; right: 0; bottom: 0;
-    width: min(360px, 90vw);
-    z-index: 30;
-    transform: translateX(100%);
-    transition: transform .18s ease-out;
-    box-shadow: -2px 0 0 var(--win-black), -4px 0 0 var(--win-dark);
-    border-left: 2px solid var(--win-white);
-  }
-  body.queue-open .queue-section{ transform: translateX(0) }
-  body.queue-open .queue-backdrop{
-    display: block;
-    position: fixed; inset: 0; z-index: 20;
-    background: rgba(0,0,0,0.4);
-  }
+.start-logo{
+  display: inline-block;
+  width: 18px; height: 18px;
+  image-rendering: pixelated;
 }
-/* The toggle button is hidden on wide layouts */
-.queue-toggle{ display: none }
-.queue-toggle{
-  margin-left: auto; padding: 0 10px; height: 22px;
-  font-size: 11px; font-weight: bold;
+.taskbar-divider{
+  width: 1px; height: 18px; margin: 0 2px;
+  background: var(--win-dark);
+  box-shadow: 1px 0 0 var(--win-white);
 }
-.queue-backdrop{ display: none }
-/* Mobile: bump font, larger tap targets, single-column rows */
-@media (max-width: 560px){
-  body{ font-size: 13px }
-  .layout{ padding: 0 }
-  .app-window{ border: none; box-shadow: none }
-  .brand{ height: 32px; font-size: 13px }
-  .topbar{ padding: 4px }
-  .preview-controls,
-  .preview-toolbar,
-  .preview-adjust{ padding: 8px; gap: 8px }
-  .preview-adjust{ grid-template-columns: 1fr }
-  .opt-group{ padding: 6px 10px 8px; gap: 8px }
-  .opt{ font-size: 13px; min-height: 28px }
-  .btn{ padding: 7px 14px; min-width: 64px; font-size: 13px }
-  .info-row{
-    grid-template-columns: 1fr auto;
-    grid-template-rows: auto auto;
-    gap: 2px 10px;
-    padding: 8px 0;
-    border-bottom: 1px dotted var(--win-dark);
-  }
-  .info-row .info-label{ font-size: 11px; color: var(--win-dark); grid-column: 1; grid-row: 1 }
-  .info-row .info-value{ grid-column: 1; grid-row: 2 }
-  .info-row .edit-btn{
-    grid-column: 2; grid-row: 1 / span 2;
-    align-self: center; width: 32px; height: 26px;
-  }
-  .queue-item{ grid-template-columns: auto 1fr auto; padding: 8px }
-  .q-thumb{ width: 44px; height: 32px }
-  .file-header{ padding: 10px 12px }
-  .queue-section{ padding: 8px }
+.taskbar-items{ display: flex; gap: 2px; flex: 1; overflow: hidden }
+.task-item{
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 0 8px; height: 22px; min-width: 0; max-width: 160px;
+  background: var(--win-silver); color: var(--win-text);
+  border-top: 2px solid var(--win-white);
+  border-left: 2px solid var(--win-white);
+  border-right: 2px solid var(--win-black);
+  border-bottom: 2px solid var(--win-black);
+  box-shadow: inset 1px 1px 0 var(--win-light), inset -1px -1px 0 var(--win-dark);
+  font-family: var(--font); font-size: 11px; cursor: pointer;
+  border-radius: 0; overflow: hidden;
+  white-space: nowrap;
 }
-.left-col{
-  display: grid;
-  grid-template-rows: var(--preview-h, 1fr) 6px 1fr;
-  min-height: 0; min-width: 0;
-  overflow: hidden;
+.task-item.active{
+  border-color: var(--win-black) var(--win-white) var(--win-white) var(--win-black);
+  box-shadow: inset 1px 1px 0 var(--win-dark);
+  background:
+    repeating-linear-gradient(45deg, var(--win-light) 0 1px, var(--win-silver) 1px 2px);
+  font-weight: bold;
 }
-.left-col > .preview-card{ min-height: 0; overflow: hidden }
-.left-col > .bottom-scroll{ min-height: 0 }
-.bottom-scroll{
-  overflow-y: auto;
-  display: flex; flex-direction: column;
-  padding: 0;
+.task-icon{
+  display: inline-block;
+  width: 16px; height: 16px;
+  image-rendering: pixelated;
+  flex: 0 0 auto;
 }
-
-/* === Splitters (thin sunken dividers) ================================== */
-.splitter{ background: var(--win-silver); position: relative; user-select: none }
-.splitter-v{ cursor: col-resize; width: 6px; min-width: 6px;
+.taskbar-tray{
+  display: flex; align-items: center;
+  padding: 0 6px; height: 22px;
+  background: var(--win-silver);
+  border-top: 1px solid var(--win-dark);
   border-left: 1px solid var(--win-dark);
   border-right: 1px solid var(--win-white);
-}
-.splitter-h{ cursor: row-resize; height: 6px; min-height: 6px;
-  border-top: 1px solid var(--win-dark);
   border-bottom: 1px solid var(--win-white);
 }
-.splitter:hover, .splitter.dragging{ background: var(--win-light) }
+.tray-clock{ font-size: 11px; color: var(--win-text); font-variant-numeric: tabular-nums }
 
-/* === Sections inside the single window (no nested chrome) ============== */
-.preview-card,
-.file-header,
-.queue-section{
-  background: var(--win-silver);
-  border: none;
-  box-shadow: none;
-  color: var(--win-text);
-}
-/* The modal is still its own floating window */
+/* The modal is still its own floating window (separate from MDI) */
 .modal{
   background: var(--win-silver);
   border-top: 2px solid var(--win-white);
@@ -280,16 +262,24 @@ body{ display: flex; flex-direction: column; background: var(--win-teal) }
   color: var(--win-text);
 }
 
+/* Mobile: stack windows full-width, hide resize */
+@media (max-width: 560px){
+  body{ font-size: 13px }
+  .win{ resize: none }
+  .opt{ font-size: 13px; min-height: 28px }
+  .btn{ padding: 6px 12px; font-size: 13px }
+  .task-item{ max-width: 80px; padding: 0 6px }
+  .task-item .task-icon{ display: none }
+}
+
 /* === Preview ========================================================== */
-.preview-card{ display: flex; flex-direction: column; min-height: 0 }
 .preview-stage{
   position: relative;
   background: #000;
   display: grid; place-items: center;
   flex: 1; min-height: 0;
-  padding: 0;
   overflow: hidden;
-  /* Sunken inner area to look like the document area of a window */
+  /* Sunken inner area */
   border-top: 2px solid var(--win-dark);
   border-left: 2px solid var(--win-dark);
   border-right: 2px solid var(--win-white);
@@ -303,29 +293,13 @@ body{ display: flex; flex-direction: column; background: var(--win-teal) }
   padding: 20px; text-align: center;
   background: rgba(0,0,0,0.6); font-size: 11px;
 }
-
 .preview-controls{
   display: flex; align-items: center; gap: 8px;
-  padding: 8px 12px;
+  padding: 6px 8px;
   background: var(--win-silver);
 }
-.preview-controls #playBtn{ min-width: 36px; padding: 3px 10px }
-.preview-toolbar{
-  display: flex; align-items: center; gap: 10px;
-  padding: 6px 12px 8px;
-  background: var(--win-silver);
-  flex-wrap: wrap;
-}
-.preview-adjust{
-  display: grid; grid-template-columns: repeat(5, minmax(160px, 1fr)) auto;
-  gap: 8px 20px; padding: 10px 12px 12px;
-  background: var(--win-silver);
-  font-size: 12px;
-}
-.preview-adjust .slider{ grid-template-columns: 60px 1fr 36px; font-size: 12px; gap: 8px }
-@media (max-width: 1400px){
-  .preview-adjust{ grid-template-columns: repeat(2, 1fr) auto }
-}
+.preview-controls #playBtn{ min-width: 32px; padding: 3px 10px; display: inline-grid; place-items: center }
+.preview-controls #playBtn .play-icon{ width: 14px; height: 14px; image-rendering: pixelated; display: block }
 
 /* Time label */
 .time{
@@ -655,9 +629,8 @@ input[type="radio"]:checked::after{
   color: var(--win-text); text-align: center;
 }
 .queue-empty .dz-icon{
-  font-size: 32px; color: var(--win-dark);
-  width: auto; height: auto;
-  background: transparent; border: none;
+  width: 36px; height: 36px;
+  image-rendering: pixelated;
   display: block;
 }
 .queue-empty .dz-title{ font-size: 11px; color: var(--win-text); font-weight: bold }

@@ -37,9 +37,8 @@ setupSampleButton();
 setupPreviewControls();
 setupSettings();
 setupQueueActions();
-setupSplitters();
 setupKeyboardShortcuts();
-setupQueueToggle();
+setupWindows();
 
 window.addEventListener('resize', () => player.refit?.());
 new ResizeObserver(() => player.refit?.()).observe(document.querySelector('.preview-stage'));
@@ -113,7 +112,7 @@ async function selectJob(jobId) {
   // Stop any audio/video playback before switching files.
   if (player.playing) {
     player.pause();
-    $('#playBtn').textContent = '▶';
+    $('#playBtn').innerHTML = '<img class="play-icon" src="assets/icons/play.svg" alt="▶">';
   }
   state.selectedJobId = jobId;
   // Apply this job's stored settings to the UI before previewing.
@@ -335,11 +334,11 @@ function setupPreviewControls() {
     if (!state.current || state.current.kind !== 'video') return;
     if (player.playing) {
       player.pause();
-      $('#playBtn').textContent = '▶';
+      $('#playBtn').innerHTML = '<img class="play-icon" src="assets/icons/play.svg" alt="▶">';
       ga('preview_pause');
     } else {
       player.play();
-      $('#playBtn').textContent = '⏸';
+      $('#playBtn').innerHTML = '<img class="play-icon" src="assets/icons/pause.svg" alt="⏸">';
       ga('preview_play');
     }
   });
@@ -348,7 +347,7 @@ function setupPreviewControls() {
     $('#seekBar').value = String(Math.round(t/total*1000));
     $('#timeLabel').textContent = `${fmtTime(t)} / ${fmtTime(total)}`;
   };
-  player.onEnd = () => { $('#playBtn').textContent = '▶'; };
+  player.onEnd = () => { $('#playBtn').innerHTML = '<img class="play-icon" src="assets/icons/play.svg" alt="▶">'; };
   $('#seekBar').addEventListener('input', () => {
     const total = state.current?.parsed.durationSec || 0;
     const t = $('#seekBar').valueAsNumber/1000 * total;
@@ -771,50 +770,206 @@ function fmtTime(t) {
   return `${m}:${s}`;
 }
 
-function setupSplitters() {
-  const workspace = $('#workspace');
-  const leftCol = $('#leftCol');
-  // Restore saved sizes.
-  const savedQ = localStorage.getItem('ui:queueW');
-  if (savedQ) workspace.style.setProperty('--queue-w', savedQ);
-  const savedP = localStorage.getItem('ui:previewH');
-  if (savedP) leftCol.style.setProperty('--preview-h', savedP);
+// === MDI windows + taskbar ===========================================
+function setupWindows() {
+  const desktop = $('#desktop');
+  if (!desktop) return;
+  const wins = [...document.querySelectorAll('.win')];
+  let zCounter = 10;
 
-  setupDragSplitter($('#splitterV'), (deltaPx, startSize) => {
-    const next = Math.max(260, Math.min(700, startSize - deltaPx));
-    workspace.style.setProperty('--queue-w', next + 'px');
-    localStorage.setItem('ui:queueW', next + 'px');
-  }, () => parseInt(getComputedStyle(workspace).gridTemplateColumns.split(' ').slice(-1)[0], 10) || 380, 'x');
-
-  setupDragSplitter($('#splitterH'), (deltaPx, startSize) => {
-    const next = Math.max(180, Math.min(window.innerHeight - 200, startSize + deltaPx));
-    leftCol.style.setProperty('--preview-h', next + 'px');
-    localStorage.setItem('ui:previewH', next + 'px');
-  }, () => leftCol.firstElementChild.getBoundingClientRect().height, 'y');
-}
-
-function setupDragSplitter(handle, onDelta, getStartSize, axis) {
-  if (!handle) return;
-  const start = (e) => {
-    e.preventDefault();
-    const startPos = axis === 'x' ? e.clientX : e.clientY;
-    const startSize = getStartSize();
-    handle.classList.add('dragging');
-    document.body.style.cursor = axis === 'x' ? 'col-resize' : 'row-resize';
-    const move = (ev) => {
-      const pos = axis === 'x' ? ev.clientX : ev.clientY;
-      onDelta(pos - startPos, startSize);
+  // Default tiled layout (computed at start; respects desktop size).
+  const placeDefaults = () => {
+    const dw = desktop.clientWidth;
+    const dh = desktop.clientHeight;
+    const gap = 4;
+    const layout = {
+      playback: { x: gap, y: gap, w: Math.max(360, Math.round(dw * 0.6) - gap*1.5), h: Math.max(280, Math.round(dh * 0.62) - gap*1.5) },
+      edit:     { x: Math.round(dw * 0.6) + gap*0.5, y: gap, w: Math.max(280, dw - Math.round(dw * 0.6) - gap*1.5), h: Math.max(280, Math.round(dh * 0.62) - gap*1.5) },
+      info:     { x: gap, y: Math.round(dh * 0.62) + gap*0.5, w: Math.max(360, Math.round(dw * 0.6) - gap*1.5), h: Math.max(160, dh - Math.round(dh * 0.62) - gap*1.5) },
+      queue:    { x: Math.round(dw * 0.6) + gap*0.5, y: Math.round(dh * 0.62) + gap*0.5, w: Math.max(280, dw - Math.round(dw * 0.6) - gap*1.5), h: Math.max(160, dh - Math.round(dh * 0.62) - gap*1.5) },
     };
-    const up = () => {
-      handle.classList.remove('dragging');
-      document.body.style.cursor = '';
-      document.removeEventListener('mousemove', move);
-      document.removeEventListener('mouseup', up);
-    };
-    document.addEventListener('mousemove', move);
-    document.addEventListener('mouseup', up);
+    for (const w of wins) {
+      const id = w.dataset.win;
+      const l = layout[id]; if (!l) continue;
+      w.style.left = l.x + 'px';
+      w.style.top = l.y + 'px';
+      w.style.width = l.w + 'px';
+      w.style.height = l.h + 'px';
+    }
   };
-  handle.addEventListener('mousedown', start);
+
+  // Restore saved geometry; fall back to defaults.
+  let saved;
+  try { saved = JSON.parse(localStorage.getItem('ui:windows') || '{}'); } catch { saved = {}; }
+  let hasAnySaved = false;
+  for (const w of wins) {
+    const id = w.dataset.win;
+    if (saved[id]) {
+      hasAnySaved = true;
+      const s = saved[id];
+      if (s.x != null) w.style.left = s.x + 'px';
+      if (s.y != null) w.style.top = s.y + 'px';
+      if (s.w != null) w.style.width = s.w + 'px';
+      if (s.h != null) w.style.height = s.h + 'px';
+      if (s.min) w.classList.add('minimized');
+      if (s.max) w.classList.add('maximized');
+    }
+  }
+  if (!hasAnySaved) placeDefaults();
+
+  const persist = () => {
+    const data = {};
+    for (const w of wins) {
+      const id = w.dataset.win;
+      data[id] = {
+        x: w.offsetLeft, y: w.offsetTop, w: w.offsetWidth, h: w.offsetHeight,
+        min: w.classList.contains('minimized'),
+        max: w.classList.contains('maximized'),
+      };
+    }
+    localStorage.setItem('ui:windows', JSON.stringify(data));
+  };
+
+  const focusWin = (w) => {
+    for (const x of wins) x.classList.remove('active');
+    w.classList.add('active');
+    w.style.zIndex = String(++zCounter);
+    syncTaskbar();
+  };
+
+  // Pointer drag on titlebar to move window.
+  for (const w of wins) {
+    const bar = w.querySelector('.win-titlebar');
+    bar.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.win-btn')) return;
+      if (w.classList.contains('maximized')) return;
+      focusWin(w);
+      const startX = e.clientX, startY = e.clientY;
+      const startLeft = w.offsetLeft, startTop = w.offsetTop;
+      const onMove = (ev) => {
+        const nx = Math.max(0, Math.min(desktop.clientWidth - 40, startLeft + (ev.clientX - startX)));
+        const ny = Math.max(0, Math.min(desktop.clientHeight - 24, startTop + (ev.clientY - startY)));
+        w.style.left = nx + 'px';
+        w.style.top = ny + 'px';
+      };
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        persist();
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+      e.preventDefault();
+    });
+    bar.addEventListener('dblclick', (e) => {
+      if (e.target.closest('.win-btn')) return;
+      toggleMax(w);
+    });
+    w.addEventListener('mousedown', () => focusWin(w));
+
+    // Window control buttons.
+    w.querySelectorAll('.win-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const act = btn.dataset.act;
+        if (act === 'min') { w.classList.add('minimized'); persist(); syncTaskbar(); }
+        else if (act === 'max') { toggleMax(w); }
+        else if (act === 'close') { w.classList.add('minimized'); persist(); syncTaskbar(); }
+      });
+    });
+
+    // Persist resize via ResizeObserver.
+    const ro = new ResizeObserver(() => persist());
+    ro.observe(w);
+  }
+
+  function toggleMax(w) {
+    w.classList.toggle('maximized');
+    persist();
+    // Player canvas re-fit when playback window resized.
+    if (w.dataset.win === 'playback') player.refit?.();
+  }
+
+  // Taskbar wiring.
+  const taskbarItems = document.querySelectorAll('.task-item');
+  taskbarItems.forEach(b => {
+    b.addEventListener('click', () => {
+      const id = b.dataset.show;
+      const w = document.querySelector(`.win[data-win="${id}"]`);
+      if (!w) return;
+      const isMin = w.classList.contains('minimized');
+      const isActive = w.classList.contains('active') && !isMin;
+      if (isMin) {
+        w.classList.remove('minimized');
+        focusWin(w);
+      } else if (isActive) {
+        // Minimize when clicking active taskbar item.
+        w.classList.add('minimized');
+        syncTaskbar();
+      } else {
+        focusWin(w);
+      }
+      persist();
+    });
+  });
+
+  function syncTaskbar() {
+    taskbarItems.forEach(b => {
+      const id = b.dataset.show;
+      const w = document.querySelector(`.win[data-win="${id}"]`);
+      const isVisible = w && !w.classList.contains('minimized');
+      const isActive  = isVisible && w.classList.contains('active');
+      b.classList.toggle('active', !!isActive);
+    });
+  }
+
+  // Start button: show all windows.
+  $('#startBtn')?.addEventListener('click', () => {
+    for (const w of wins) w.classList.remove('minimized');
+    focusWin(wins[0]);
+    persist();
+  });
+
+  // Clock updates every 30s.
+  const clock = $('#trayClock');
+  const tick = () => {
+    const d = new Date();
+    if (clock) clock.textContent = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  };
+  tick(); setInterval(tick, 30_000);
+
+  // Keep every window fully inside the desktop on resize (overlapping is OK).
+  const fitInsideDesktop = () => {
+    const dw = desktop.clientWidth;
+    const dh = desktop.clientHeight;
+    for (const w of wins) {
+      if (w.classList.contains('maximized')) continue;
+      // Shrink first if larger than desktop.
+      let ww = Math.min(w.offsetWidth, dw);
+      let wh = Math.min(w.offsetHeight, dh);
+      if (ww !== w.offsetWidth) w.style.width = ww + 'px';
+      if (wh !== w.offsetHeight) w.style.height = wh + 'px';
+      // Then nudge left/top so the window stays within the desktop.
+      let x = w.offsetLeft, y = w.offsetTop;
+      if (x + ww > dw) x = dw - ww;
+      if (y + wh > dh) y = dh - wh;
+      if (x < 0) x = 0;
+      if (y < 0) y = 0;
+      if (x !== w.offsetLeft) w.style.left = x + 'px';
+      if (y !== w.offsetTop) w.style.top = y + 'px';
+    }
+  };
+  fitInsideDesktop(); // run once at startup in case saved geometry exceeds viewport.
+
+  let firstFocus = true;
+  window.addEventListener('resize', () => {
+    fitInsideDesktop();
+    if (firstFocus) firstFocus = false; else persist();
+  });
+
+  // Focus the playback window initially.
+  focusWin(document.querySelector('.win[data-win="playback"]'));
+  syncTaskbar();
 }
 
 function setupKeyboardShortcuts() {
@@ -860,35 +1015,6 @@ function seekRelative(deltaSec) {
   const total = state.current.parsed.durationSec;
   const t = Math.max(0, Math.min(total, player.currentTime() + deltaSec));
   player.seek(t);
-}
-
-function setupQueueToggle() {
-  const btn = $('#queueToggleBtn');
-  const bd  = $('#queueBackdrop');
-  const close = () => {
-    document.body.classList.remove('queue-open');
-    btn?.setAttribute('aria-expanded', 'false');
-  };
-  const open = () => {
-    document.body.classList.add('queue-open');
-    btn?.setAttribute('aria-expanded', 'true');
-  };
-  btn?.addEventListener('click', () => {
-    if (document.body.classList.contains('queue-open')) close();
-    else open();
-  });
-  bd?.addEventListener('click', close);
-  // Auto-close if user resizes back to wide layout.
-  window.addEventListener('resize', () => {
-    if (window.innerWidth > 860) close();
-  });
-  // Close after selecting an item in narrow mode so the preview is visible.
-  document.addEventListener('click', (e) => {
-    if (window.innerWidth > 860) return;
-    if (e.target.closest('.queue-item') && !e.target.closest('[data-action="remove"]') && !e.target.closest('.q-dl')) {
-      close();
-    }
-  });
 }
 
 function cycleSelection(direction) {

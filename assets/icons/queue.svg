@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <!-- Paper-stack: 3 sheets staggered -->
+  <!-- back sheet -->
+  <rect x="2" y="1" width="11" height="11" fill="#ffffff"/>
+  <rect x="2" y="1" width="11" height="1" fill="#808080"/>
+  <rect x="2" y="1" width="1" height="11" fill="#808080"/>
+  <rect x="12" y="1" width="1" height="11" fill="#000000"/>
+  <rect x="2" y="11" width="11" height="1" fill="#000000"/>
+  <!-- middle sheet -->
+  <rect x="3" y="3" width="11" height="11" fill="#ffffff"/>
+  <rect x="3" y="3" width="11" height="1" fill="#808080"/>
+  <rect x="3" y="3" width="1" height="11" fill="#808080"/>
+  <rect x="13" y="3" width="1" height="11" fill="#000000"/>
+  <rect x="3" y="13" width="11" height="1" fill="#000000"/>
+  <!-- front sheet -->
+  <rect x="4" y="5" width="11" height="10" fill="#ffffff"/>
+  <rect x="14" y="5" width="1" height="10" fill="#000000"/>
+  <rect x="4" y="14" width="11" height="1" fill="#000000"/>
+  <rect x="4" y="5" width="11" height="1" fill="#808080"/>
+  <rect x="4" y="5" width="1" height="10" fill="#808080"/>
+  <!-- Lines (list items) on front sheet -->
+  <rect x="6" y="7" width="7" height="1" fill="#000080"/>
+  <rect x="6" y="9" width="7" height="1" fill="#000080"/>
+  <rect x="6" y="11" width="7" height="1" fill="#000080"/>
+</svg>

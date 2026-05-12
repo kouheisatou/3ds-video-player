@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <!-- DS-inspired: two screens stacked vertically with hinge -->
+  <!-- Top screen body -->
+  <rect x="2" y="1" width="12" height="6" fill="#c0c0c0"/>
+  <rect x="2" y="1" width="12" height="1" fill="#ffffff"/>
+  <rect x="2" y="1" width="1" height="6" fill="#ffffff"/>
+  <rect x="13" y="1" width="1" height="6" fill="#000000"/>
+  <!-- Top screen display -->
+  <rect x="4" y="2" width="8" height="4" fill="#0080ff"/>
+  <rect x="4" y="2" width="8" height="1" fill="#000000"/>
+  <rect x="4" y="2" width="1" height="4" fill="#000000"/>
+  <!-- Hinge -->
+  <rect x="2" y="7" width="12" height="2" fill="#808080"/>
+  <rect x="2" y="7" width="12" height="1" fill="#000000"/>
+  <rect x="2" y="8" width="12" height="1" fill="#ffffff"/>
+  <!-- Bottom screen body -->
+  <rect x="2" y="9" width="12" height="6" fill="#c0c0c0"/>
+  <rect x="13" y="9" width="1" height="6" fill="#000000"/>
+  <rect x="2" y="14" width="12" height="1" fill="#000000"/>
+  <rect x="2" y="9" width="1" height="5" fill="#ffffff"/>
+  <!-- Bottom screen display -->
+  <rect x="4" y="10" width="8" height="4" fill="#00a000"/>
+  <rect x="4" y="10" width="8" height="1" fill="#000000"/>
+  <rect x="4" y="10" width="1" height="4" fill="#000000"/>
+</svg>

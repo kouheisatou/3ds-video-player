@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="14" viewBox="0 0 16 14" shape-rendering="crispEdges">
+  <!-- Maximise: rectangle outline with thick top bar (title bar) -->
+  <!-- outer frame -->
+  <rect x="2" y="2" width="12" height="10" fill="none" stroke="#000" stroke-width="1"/>
+  <!-- thick top title bar: extra line just below top edge -->
+  <rect x="2" y="3" width="12" height="1" fill="#000"/>
+</svg>
