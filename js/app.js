@@ -28,6 +28,7 @@ const state = {
 };
 
 const player = new Player($('#previewCanvas'));
+player.mode = document.querySelector('input[name="viewMode"]:checked')?.value || '2d';
 window.__player = player;
 window.__state = state;
 
