@@ -620,7 +620,7 @@ function refreshQueueUi() {
     $('#clearQueueBtn').disabled = true;
     return;
   }
-  $('#runQueueBtn').disabled = !state.queue.some(j => j.status === 'pending');
+  $('#runQueueBtn').disabled = state.queue.length === 0;
   $('#clearQueueBtn').disabled = false;
   list.innerHTML = state.queue.map(j => `
     <li class="queue-item ${j.id === state.selectedJobId ? 'selected' : ''}" data-id="${j.id}" data-action="select">
