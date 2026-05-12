@@ -1,68 +1,54 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" shape-rendering="crispEdges">
-  <!-- ===== Cute pixel fish — orange body, white stripes ===== -->
-  <!-- Body shadow / outline (dark orange) -->
-  <rect x="13" y="18" width="2" height="2" fill="#a04010"/>
-  <rect x="14" y="16" width="2" height="2" fill="#a04010"/>
-  <rect x="15" y="14" width="2" height="2" fill="#a04010"/>
-  <rect x="16" y="13" width="2" height="2" fill="#a04010"/>
-  <rect x="18" y="12" width="14" height="2" fill="#a04010"/>
-  <rect x="32" y="13" width="2" height="2" fill="#a04010"/>
-  <rect x="34" y="14" width="2" height="2" fill="#a04010"/>
-  <rect x="36" y="16" width="2" height="2" fill="#a04010"/>
-  <rect x="36" y="18" width="2" height="4" fill="#a04010"/>
-  <rect x="36" y="22" width="2" height="2" fill="#a04010"/>
-  <rect x="34" y="24" width="2" height="2" fill="#a04010"/>
-  <rect x="32" y="26" width="2" height="2" fill="#a04010"/>
-  <rect x="18" y="28" width="14" height="2" fill="#a04010"/>
-  <rect x="16" y="26" width="2" height="2" fill="#a04010"/>
-  <rect x="15" y="24" width="2" height="2" fill="#a04010"/>
-  <rect x="14" y="22" width="2" height="2" fill="#a04010"/>
-  <rect x="13" y="20" width="2" height="2" fill="#a04010"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 24" shape-rendering="crispEdges">
+  <!-- ===== Pixel penguin v4 — rounded bottom, distinct wing step ===== -->
 
-  <!-- Body fill (orange) -->
-  <rect x="15" y="16" width="2" height="8" fill="#ff8030"/>
-  <rect x="16" y="14" width="2" height="12" fill="#ff8030"/>
-  <rect x="18" y="14" width="14" height="14" fill="#ff8030"/>
-  <rect x="32" y="14" width="2" height="12" fill="#ff8030"/>
-  <rect x="34" y="16" width="2" height="8" fill="#ff8030"/>
+  <!-- Black silhouette -->
+  <rect x="9"  y="2"  width="4"  height="1" fill="#000000"/>
+  <rect x="8"  y="3"  width="6"  height="1" fill="#000000"/>
+  <rect x="7"  y="4"  width="8"  height="1" fill="#000000"/>
+  <rect x="6"  y="5"  width="9"  height="1" fill="#000000"/>
+  <rect x="6"  y="6"  width="9"  height="1" fill="#000000"/>
+  <rect x="6"  y="7"  width="9"  height="1" fill="#000000"/>
+  <rect x="5"  y="8"  width="10" height="1" fill="#000000"/>
+  <rect x="5"  y="9"  width="10" height="1" fill="#000000"/>
+  <rect x="4"  y="10" width="11" height="1" fill="#000000"/>
+  <rect x="4"  y="11" width="11" height="1" fill="#000000"/>
+  <rect x="4"  y="12" width="11" height="1" fill="#000000"/>
+  <rect x="4"  y="13" width="11" height="1" fill="#000000"/>
+  <rect x="5"  y="14" width="10" height="1" fill="#000000"/>
+  <rect x="5"  y="15" width="10" height="1" fill="#000000"/>
+  <rect x="6"  y="16" width="9"  height="1" fill="#000000"/>
+  <rect x="7"  y="17" width="7"  height="1" fill="#000000"/>
 
-  <!-- Body lighter highlight (top) -->
-  <rect x="18" y="14" width="14" height="1" fill="#ffb878"/>
-  <rect x="16" y="15" width="2" height="1" fill="#ffb878"/>
-  <rect x="32" y="15" width="2" height="1" fill="#ffb878"/>
-  <rect x="20" y="15" width="10" height="1" fill="#ffa050"/>
-
-  <!-- White stripe 1 (vertical band near head) -->
-  <rect x="24" y="14" width="2" height="14" fill="#ffffff"/>
-  <rect x="24" y="14" width="2" height="1" fill="#e0e0e0"/>
-
-  <!-- White stripe 2 (vertical band near tail) -->
-  <rect x="18" y="14" width="2" height="14" fill="#ffffff"/>
-  <rect x="18" y="14" width="2" height="1" fill="#e0e0e0"/>
-
-  <!-- Tail fin (left side, triangle) -->
-  <polygon points="13,12 13,30 6,21" fill="#a04010"/>
-  <polygon points="13,14 13,28 8,21" fill="#ff8030"/>
-  <rect x="9" y="20" width="2" height="2" fill="#ffb878"/>
-
-  <!-- Dorsal fin (top) -->
-  <polygon points="22,14 30,14 28,6 24,6" fill="#a04010"/>
-  <polygon points="23,13 29,13 28,8 24,8" fill="#ff8030"/>
-  <polygon points="24,12 28,12 27,9" fill="#ffb878"/>
-
-  <!-- Pectoral / belly fin -->
-  <polygon points="22,28 30,28 28,34 24,34" fill="#a04010"/>
-  <polygon points="23,28 29,28 27,33 25,33" fill="#ff8030"/>
-
-  <!-- Mouth / lips (right side) -->
-  <rect x="36" y="19" width="2" height="2" fill="#ff8030"/>
-  <rect x="38" y="20" width="1" height="1" fill="#ff8030"/>
-  <!-- Smile -->
-  <rect x="35" y="22" width="3" height="1" fill="#000000"/>
-  <rect x="34" y="21" width="1" height="1" fill="#000000"/>
+  <!-- White face/belly — teardrop, biased right -->
+  <rect x="10" y="4"  width="3"  height="1" fill="#ffffff"/>
+  <rect x="9"  y="5"  width="5"  height="1" fill="#ffffff"/>
+  <rect x="9"  y="6"  width="5"  height="1" fill="#ffffff"/>
+  <rect x="9"  y="7"  width="5"  height="1" fill="#ffffff"/>
+  <rect x="8"  y="8"  width="6"  height="1" fill="#ffffff"/>
+  <rect x="8"  y="9"  width="6"  height="1" fill="#ffffff"/>
+  <rect x="7"  y="10" width="7"  height="1" fill="#ffffff"/>
+  <rect x="7"  y="11" width="7"  height="1" fill="#ffffff"/>
+  <rect x="7"  y="12" width="7"  height="1" fill="#ffffff"/>
+  <rect x="7"  y="13" width="7"  height="1" fill="#ffffff"/>
+  <rect x="8"  y="14" width="6"  height="1" fill="#ffffff"/>
+  <rect x="8"  y="15" width="6"  height="1" fill="#ffffff"/>
+  <rect x="9"  y="16" width="5"  height="1" fill="#ffffff"/>
 
   <!-- Eye -->
-  <rect x="28" y="17" width="5" height="5" fill="#ffffff"/>
-  <rect x="29" y="18" width="3" height="3" fill="#000000"/>
-  <rect x="29" y="18" width="1" height="1" fill="#ffffff"/>
+  <rect x="12" y="6"  width="1"  height="1" fill="#000000"/>
+
+  <!-- Beak — orange triangle, slight up-right angle -->
+  <rect x="14" y="6"  width="1"  height="1" fill="#000000"/>
+  <rect x="14" y="7"  width="3"  height="1" fill="#ff7a18"/>
+  <rect x="14" y="8"  width="2"  height="1" fill="#ff7a18"/>
+  <rect x="17" y="7"  width="1"  height="1" fill="#000000"/>
+  <rect x="16" y="8"  width="1"  height="1" fill="#000000"/>
+
+  <!-- Feet — two small orange ovals at bottom -->
+  <rect x="7"  y="18" width="3"  height="1" fill="#ff7a18"/>
+  <rect x="11" y="18" width="3"  height="1" fill="#ff7a18"/>
+  <rect x="7"  y="18" width="1"  height="1" fill="#000000"/>
+  <rect x="9"  y="18" width="1"  height="1" fill="#000000"/>
+  <rect x="11" y="18" width="1"  height="1" fill="#000000"/>
+  <rect x="13" y="18" width="1"  height="1" fill="#000000"/>
 </svg>
