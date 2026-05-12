@@ -777,41 +777,45 @@ function setupWindows() {
   const wins = [...document.querySelectorAll('.win')];
   let zCounter = 10;
 
-  // Default tiled layout:
-  //   ┌──────────────┬───────┐
-  //   │   playback   │       │
-  //   │              │ queue │
-  //   ├──────┬───────┤       │
-  //   │ info │ edit  │       │
-  //   └──────┴───────┴───────┘
-  //   queue width ≈ 1/3 viewport, full height.
+  // Minimum grip area kept visible when viewport shrinks or user drags off-screen.
+  const MIN_GRIP = 15;
+  const TITLEBAR_H = 22;
+
+  // Default layout — proportions of desktop, captured from a designed arrangement.
+  // Windows overlap slightly for a natural scattered feel.
+  const DEFAULT_LAYOUT = {
+    playback: { fx: 0.0338, fy: 0.0412, fw: 0.6798, fh: 0.6162, z: 1 },
+    info:     { fx: 0.1360, fy: 0.5060, fw: 0.3492, fh: 0.4157, z: 2 },
+    edit:     { fx: 0.2647, fy: 0.6388, fw: 0.3467, fh: 0.4050, z: 3 },
+    queue:    { fx: 0.6436, fy: 0.1700, fw: 0.3218, fh: 0.8101, z: 4 },
+  };
   const placeDefaults = () => {
     const dw = desktop.clientWidth;
     const dh = desktop.clientHeight;
-    const queueW = Math.max(280, Math.round(dw / 3));
-    const leftW  = Math.max(360, dw - queueW);
-    const halfLeftW = Math.floor(leftW / 2);
-    const topH   = Math.max(220, Math.round(dh * 0.62));
-    const bottomH = Math.max(140, dh - topH);
-    const layout = {
-      playback: { x: 0,         y: 0,    w: leftW,            h: topH },
-      info:     { x: 0,         y: topH, w: halfLeftW,        h: bottomH },
-      edit:     { x: halfLeftW, y: topH, w: leftW - halfLeftW, h: bottomH },
-      queue:    { x: leftW,     y: 0,    w: queueW,           h: dh },
-    };
     for (const w of wins) {
       const id = w.dataset.win;
-      const l = layout[id]; if (!l) continue;
-      w.style.left = l.x + 'px';
-      w.style.top = l.y + 'px';
-      w.style.width = l.w + 'px';
-      w.style.height = l.h + 'px';
+      const l = DEFAULT_LAYOUT[id]; if (!l) continue;
+      let x = Math.round(l.fx * dw);
+      let y = Math.round(l.fy * dh);
+      let wd = Math.round(l.fw * dw);
+      let hd = Math.round(l.fh * dh);
+      // Clamp size to viewport (windows shouldn't be larger than the desktop).
+      wd = Math.min(wd, dw);
+      hd = Math.min(hd, dh);
+      // Clamp position so titlebar remains grabable.
+      x = Math.max(MIN_GRIP - wd, Math.min(dw - MIN_GRIP, x));
+      y = Math.max(MIN_GRIP - TITLEBAR_H, Math.min(dh - MIN_GRIP, y));
+      w.style.left = x + 'px';
+      w.style.top = y + 'px';
+      w.style.width = wd + 'px';
+      w.style.height = hd + 'px';
+      w.style.zIndex = String(10 + (l.z || 0));
     }
   };
 
   // Restore saved geometry; fall back to defaults.
   let saved;
-  try { saved = JSON.parse(localStorage.getItem('ui:windows:v2') || '{}'); } catch { saved = {}; }
+  try { saved = JSON.parse(localStorage.getItem('ui:windows:v3') || '{}'); } catch { saved = {}; }
   let hasAnySaved = false;
   for (const w of wins) {
     const id = w.dataset.win;
@@ -822,6 +826,10 @@ function setupWindows() {
       if (s.y != null) w.style.top = s.y + 'px';
       if (s.w != null) w.style.width = s.w + 'px';
       if (s.h != null) w.style.height = s.h + 'px';
+      if (s.z != null) {
+        w.style.zIndex = String(s.z);
+        if (s.z > zCounter) zCounter = s.z;
+      }
       if (s.min) w.classList.add('minimized');
       if (s.max) w.classList.add('maximized');
     }
@@ -834,11 +842,12 @@ function setupWindows() {
       const id = w.dataset.win;
       data[id] = {
         x: w.offsetLeft, y: w.offsetTop, w: w.offsetWidth, h: w.offsetHeight,
+        z: parseInt(w.style.zIndex || '10', 10),
         min: w.classList.contains('minimized'),
         max: w.classList.contains('maximized'),
       };
     }
-    localStorage.setItem('ui:windows:v2', JSON.stringify(data));
+    localStorage.setItem('ui:windows:v3', JSON.stringify(data));
   };
 
   const focusWin = (w) => {
@@ -857,9 +866,15 @@ function setupWindows() {
       focusWin(w);
       const startX = e.clientX, startY = e.clientY;
       const startLeft = w.offsetLeft, startTop = w.offsetTop;
+      const ww = w.offsetWidth, wh = w.offsetHeight;
       const onMove = (ev) => {
-        const nx = Math.max(0, Math.min(desktop.clientWidth - 40, startLeft + (ev.clientX - startX)));
-        const ny = Math.max(0, Math.min(desktop.clientHeight - 24, startTop + (ev.clientY - startY)));
+        let nx = startLeft + (ev.clientX - startX);
+        let ny = startTop + (ev.clientY - startY);
+        const dw2 = desktop.clientWidth, dh2 = desktop.clientHeight;
+        if (nx + ww < MIN_GRIP) nx = MIN_GRIP - ww;
+        if (nx > dw2 - MIN_GRIP) nx = dw2 - MIN_GRIP;
+        if (ny + TITLEBAR_H < MIN_GRIP) ny = MIN_GRIP - TITLEBAR_H;
+        if (ny > dh2 - MIN_GRIP) ny = dh2 - MIN_GRIP;
         w.style.left = nx + 'px';
         w.style.top = ny + 'px';
       };
@@ -934,12 +949,14 @@ function setupWindows() {
     });
   }
 
-  // Start button: show all windows.
+  // Start button: invoke the dolphin tutorial.
   $('#startBtn')?.addEventListener('click', () => {
-    for (const w of wins) w.classList.remove('minimized');
-    focusWin(wins[0]);
-    persist();
+    showTutorial();
   });
+  // First-visit tutorial.
+  if (!localStorage.getItem('ui:tutorialSeen')) {
+    setTimeout(showTutorial, 500);
+  }
 
   // Clock updates every 30s.
   const clock = $('#trayClock');
@@ -949,23 +966,22 @@ function setupWindows() {
   };
   tick(); setInterval(tick, 30_000);
 
-  // Keep every window fully inside the desktop on resize (overlapping is OK).
+  // Keep the titlebar (grab area) always grabable when the viewport shrinks.
+  // Window size never changes — only position is nudged so at least MIN_GRIP
+  // pixels of the titlebar stay reachable within the desktop.
   const fitInsideDesktop = () => {
     const dw = desktop.clientWidth;
     const dh = desktop.clientHeight;
     for (const w of wins) {
       if (w.classList.contains('maximized')) continue;
-      // Shrink first if larger than desktop.
-      let ww = Math.min(w.offsetWidth, dw);
-      let wh = Math.min(w.offsetHeight, dh);
-      if (ww !== w.offsetWidth) w.style.width = ww + 'px';
-      if (wh !== w.offsetHeight) w.style.height = wh + 'px';
-      // Then nudge left/top so the window stays within the desktop.
+      const ww = w.offsetWidth, wh = w.offsetHeight;
       let x = w.offsetLeft, y = w.offsetTop;
-      if (x + ww > dw) x = dw - ww;
-      if (y + wh > dh) y = dh - wh;
-      if (x < 0) x = 0;
-      if (y < 0) y = 0;
+      // Horizontal grip: ensure ≥ MIN_GRIP px of the titlebar overlaps the viewport.
+      if (x + ww < MIN_GRIP) x = MIN_GRIP - ww;
+      if (x > dw - MIN_GRIP) x = dw - MIN_GRIP;
+      // Vertical grip: titlebar (height ~TITLEBAR_H) must be reachable.
+      if (y + TITLEBAR_H < MIN_GRIP) y = MIN_GRIP - TITLEBAR_H;
+      if (y > dh - MIN_GRIP) y = dh - MIN_GRIP;
       if (x !== w.offsetLeft) w.style.left = x + 'px';
       if (y !== w.offsetTop) w.style.top = y + 'px';
     }
@@ -1027,6 +1043,42 @@ function seekRelative(deltaSec) {
   const t = Math.max(0, Math.min(total, player.currentTime() + deltaSec));
   player.seek(t);
 }
+
+// === Tutorial (dolphin assistant) =====================================
+const TUTORIAL_STEPS = [
+  'ようこそ!3DS 3D Media Studio へ。\n3DS で撮った AVI / MPO をブラウザで再生・変換できるよ。',
+  '右の『キュー』ウィンドウへ .AVI / .MPO ファイルをドラッグ&ドロップしてみて。複数まとめてOK!',
+  '『編集』ウィンドウで回転や色を調整。表示モードを『サイドバイサイド』にすると左右並列の3D出力になるよ。',
+  '『変換』ボタンを押すと、変換結果がまとめて ZIP で自動ダウンロードされるよ。',
+  'ウィンドウは自由に移動・最小化・最大化できる。位置は次回も覚えてくれるよ。それじゃ、楽しんで!',
+];
+let tutorialStep = 0;
+function showTutorial() {
+  tutorialStep = 0;
+  renderTutorial();
+  $('#tutorial').hidden = false;
+}
+function hideTutorial() {
+  $('#tutorial').hidden = true;
+  localStorage.setItem('ui:tutorialSeen', '1');
+}
+function renderTutorial() {
+  const txt = TUTORIAL_STEPS[tutorialStep] || '';
+  $('#tutorialText').innerText = txt;
+  $('#tutorialStep').textContent = `${tutorialStep + 1} / ${TUTORIAL_STEPS.length}`;
+  $('#tutorialPrev').disabled = tutorialStep === 0;
+  $('#tutorialNext').textContent = tutorialStep === TUTORIAL_STEPS.length - 1 ? '閉じる' : '次へ';
+}
+document.addEventListener('click', (e) => {
+  if (e.target.id === 'tutorialNext') {
+    if (tutorialStep >= TUTORIAL_STEPS.length - 1) hideTutorial();
+    else { tutorialStep++; renderTutorial(); }
+  } else if (e.target.id === 'tutorialPrev') {
+    if (tutorialStep > 0) { tutorialStep--; renderTutorial(); }
+  } else if (e.target.id === 'tutorialSkip') {
+    hideTutorial();
+  }
+});
 
 function cycleSelection(direction) {
   if (state.queue.length === 0) return;

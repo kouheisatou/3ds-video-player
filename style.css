@@ -251,6 +251,68 @@ body{ display: block; background: var(--win-teal); padding: 0 }
 }
 .tray-clock{ font-size: 11px; color: var(--win-text); font-variant-numeric: tabular-nums }
 
+/* === Tutorial (dolphin assistant) ===================================== */
+.tutorial{
+  position: fixed; right: 16px; bottom: 44px;
+  z-index: 200;
+  display: flex; align-items: flex-end; gap: 8px;
+  pointer-events: none;
+}
+.tutorial-dolphin{
+  width: 96px; height: 96px;
+  image-rendering: pixelated;
+  display: block;
+  filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.4));
+  animation: tutorialBob 2.4s ease-in-out infinite;
+  pointer-events: auto;
+}
+@keyframes tutorialBob {
+  0%, 100% { transform: translateY(0) }
+  50%      { transform: translateY(-6px) }
+}
+.tutorial-bubble{
+  position: relative;
+  max-width: 280px;
+  background: var(--win-white);
+  border-top: 2px solid var(--win-white);
+  border-left: 2px solid var(--win-white);
+  border-right: 2px solid var(--win-black);
+  border-bottom: 2px solid var(--win-black);
+  box-shadow: inset 1px 1px 0 var(--win-light), inset -1px -1px 0 var(--win-dark),
+              4px 4px 0 rgba(0,0,0,0.3);
+  padding: 12px 14px;
+  pointer-events: auto;
+  color: var(--win-text);
+}
+/* Bubble tail pointing to dolphin (right side) */
+.tutorial-bubble::after{
+  content: "";
+  position: absolute;
+  right: -10px; bottom: 28px;
+  width: 0; height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-left: 12px solid var(--win-white);
+}
+.tutorial-bubble::before{
+  content: "";
+  position: absolute;
+  right: -13px; bottom: 27px;
+  width: 0; height: 0;
+  border-top: 9px solid transparent;
+  border-bottom: 9px solid transparent;
+  border-left: 13px solid var(--win-black);
+}
+.tutorial-text{
+  font-size: 13px; line-height: 1.55;
+  margin-bottom: 10px;
+}
+.tutorial-actions{
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px;
+}
+.tutorial-step{ flex: 1; color: var(--win-dark) }
+
 /* The modal is still its own floating window (separate from MDI) */
 .modal{
   background: var(--win-silver);
@@ -581,8 +643,8 @@ input[type="radio"]:checked::after{
 
 /* === Queue section ==================================================== */
 .queue-section{
-  padding: 8px 10px;
-  display: flex; flex-direction: column; gap: 6px;
+  padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 14px;
   min-height: 0; overflow: hidden;
 }
 .queue-section.dragover{
@@ -591,28 +653,30 @@ input[type="radio"]:checked::after{
 }
 .queue-head{
   display: flex; justify-content: space-between; align-items: center;
-  padding: 0 0 4px;
+  padding: 0 0 10px;
   border-bottom: 1px solid var(--win-dark);
+  gap: 12px;
 }
 .queue-head .section-title{ color: var(--win-text); font-size: 11px; margin: 0; font-weight: bold; text-transform: none; letter-spacing: 0 }
 .queue-actions{ display: flex; gap: 4px }
 .queue-actions .btn{ padding: 1px 8px; min-width: 50px }
 
 .common-settings{
-  display: flex; flex-direction: column; gap: 4px;
-  padding: 0;
-  background: transparent;
-  border: none;
-  font-size: 11px;
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 12px 14px 14px;
+  background: var(--win-silver);
+  border: 1px solid var(--win-dark);
+  box-shadow: 1px 1px 0 var(--win-white);
+  font-size: 12px;
 }
-.common-settings .field{ gap: 2px }
+.common-settings .field{ gap: 6px }
 .common-settings .field > label{ color: var(--win-text); font-size: 11px }
-.common-settings select{ font-size: 11px; padding: 2px 24px 2px 4px }
-.common-settings .slider{ grid-template-columns: 60px 1fr 30px; gap: 4px; font-size: 11px }
+.common-settings select{ font-size: 12px; padding: 5px 28px 5px 8px }
+.common-settings .slider{ grid-template-columns: 78px 1fr 40px; gap: 10px; font-size: 12px }
 
 .queue-list{
-  list-style: none; margin: 0; padding: 2px;
-  display: flex; flex-direction: column; gap: 2px;
+  list-style: none; margin: 0; padding: 10px;
+  display: flex; flex-direction: column; gap: 6px;
   overflow-y: auto;
   flex: 1; min-height: 0;
   background: var(--win-white);
@@ -639,8 +703,8 @@ input[type="radio"]:checked::after{
 
 .queue-item{
   display: grid; grid-template-columns: auto 1fr auto;
-  gap: 6px; align-items: center;
-  padding: 4px 6px;
+  gap: 8px; align-items: center;
+  padding: 8px 10px;
   background: var(--win-white);
   border: 1px solid transparent;
   cursor: pointer;

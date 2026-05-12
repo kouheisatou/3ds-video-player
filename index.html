@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>3DS 3D Media Studio — 3D動画/写真プレイヤー&コンバーター</title>
 <meta name="description" content="ニンテンドー3DSで撮影した3D動画(.AVI)と3D写真(.MPO)をブラウザで再生・変換・編集">
-<link rel="stylesheet" href="style.css?v=icons">
+<link rel="stylesheet" href="style.css?v=lay5">
 
 <!-- Google Analytics 4 (placeholder ID — replace G-XXXXXXXXXX with your real ID) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
@@ -190,6 +190,20 @@
     <span class="tray-clock" id="trayClock">--:--</span>
   </div>
 </footer>
+
+<!-- First-visit tutorial: dolphin assistant with speech bubble -->
+<div id="tutorial" class="tutorial" hidden aria-live="polite">
+  <div class="tutorial-bubble">
+    <div class="tutorial-text" id="tutorialText"></div>
+    <div class="tutorial-actions">
+      <span class="tutorial-step" id="tutorialStep"></span>
+      <button class="btn mini" id="tutorialPrev" type="button">戻る</button>
+      <button class="btn mini" id="tutorialNext" type="button">次へ</button>
+      <button class="btn mini" id="tutorialSkip" type="button">スキップ</button>
+    </div>
+  </div>
+  <img class="tutorial-dolphin" src="assets/icons/dolphin.svg" alt="">
+</div>
 
 <!-- Single-field edit dialog -->
 <dialog id="fieldEditDialog" class="modal modal-small">
