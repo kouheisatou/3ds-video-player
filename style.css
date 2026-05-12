@@ -255,9 +255,8 @@ body{ display: block; background: var(--win-teal); padding: 0 }
 .tutorial{
   position: absolute;
   z-index: 200;
-  display: flex; align-items: flex-end; gap: 4px;
+  display: flex; align-items: center; gap: 8px;
   pointer-events: none;
-  transition: left .4s ease, top .4s ease;
 }
 .tutorial[hidden]{ display: none }
 .tutorial-dolphin{
@@ -282,24 +281,26 @@ body{ display: block; background: var(--win-teal); padding: 0 }
   color: #000000;
   font-family: var(--font);
 }
-/* Bubble tail at bottom-right pointing toward the dolphin */
+/* Bubble tail on right side pointing toward the fish */
 .tutorial-bubble::after{
   content: "";
   position: absolute;
-  right: 16px; bottom: -10px;
+  right: -10px; top: 50%;
+  margin-top: -8px;
   width: 0; height: 0;
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-top: 10px solid #fffbe5;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-left: 10px solid #fffbe5;
 }
 .tutorial-bubble::before{
   content: "";
   position: absolute;
-  right: 15px; bottom: -12px;
+  right: -12px; top: 50%;
+  margin-top: -9px;
   width: 0; height: 0;
-  border-left: 9px solid transparent;
-  border-right: 9px solid transparent;
-  border-top: 11px solid #000000;
+  border-top: 9px solid transparent;
+  border-bottom: 9px solid transparent;
+  border-left: 11px solid #000000;
 }
 .tutorial-text{
   font-size: 13px; line-height: 1.55;

@@ -1080,11 +1080,13 @@ function positionTutorial() {
   if (!t || t.hidden) return;
   const s = TUTORIAL_STEPS[tutorialStep];
   const vw = window.innerWidth, vh = window.innerHeight;
-  // Show off-screen first so we can measure size, then place precisely.
+  // Measure size (must be visible to measure correctly).
   t.style.visibility = 'hidden';
   const rect = t.getBoundingClientRect();
-  const tw = rect.width || 360, th = rect.height || 180;
-  let cx, cy; // anchor: center of the area we want to point at
+  const tw = rect.width || 380, th = rect.height || 140;
+  const FISH = 96; // fish image size
+
+  let cx, cy;
   if (s.target === 'center') {
     cx = vw / 2; cy = vh / 2;
   } else if (s.target === 'taskbar') {
@@ -1099,13 +1101,15 @@ function positionTutorial() {
       cx = vw / 2; cy = vh / 2;
     }
   }
-  // Place tutorial so its bottom-right tail roughly points at (cx,cy).
-  // We want the bubble's tail (bottom-right of bubble) near the target.
-  let left = cx - tw + 60;
-  let top  = cy - th - 20;
-  // Clamp into viewport.
+  // Container layout: [bubble][gap][fish]. Fish horizontally centered on (cx).
+  let left = cx - tw + FISH / 2;
+  let top  = cy - th / 2;
+  // If bubble would clip off the left edge, flip to the right side of target instead.
+  if (left < 8) {
+    left = cx + FISH / 2 + 12;
+  }
   left = Math.max(8, Math.min(vw - tw - 8, left));
-  top  = Math.max(8, Math.min(vh - th - 32, top)); // 32 = taskbar height
+  top  = Math.max(8, Math.min(vh - th - 32, top)); // 32 = taskbar
   t.style.left = left + 'px';
   t.style.top  = top  + 'px';
   t.style.visibility = '';
