@@ -1046,12 +1046,11 @@ function seekRelative(deltaSec) {
 
 // === Tutorial (Kairu the dolphin) =====================================
 const TUTORIAL_STEPS = [
-  { text: 'ようこそ。3DS 3D Media Studio をご紹介します。3DS で撮影した AVI / MPO をブラウザで再生・変換できます。', target: 'center' },
+  { text: '3DS 3D Media Studio は3DS で撮影した AVI / MPO をブラウザで再生・変換するツールです。', target: 'center' },
   { text: '右の「キュー」ウィンドウへ .AVI / .MPO ファイルをドラッグ&ドロップしてください。複数ファイルをまとめて投入できます。', target: '.win[data-win="queue"]' },
   { text: '「編集」ウィンドウで回転や色を調整できます。表示モードを「サイドバイサイド」にすると左右並列の3D出力になります。', target: '.win[data-win="edit"]' },
   { text: '「再生」ウィンドウで変換前のプレビューを確認できます。', target: '.win[data-win="playback"]' },
   { text: '「変換」ボタンを押すと、変換結果がまとめて ZIP で自動ダウンロードされます。', target: '#runQueueBtn' },
-  { text: 'ウィンドウは自由に移動・最小化・最大化できます。位置は次回も保持されます。それでは、お楽しみください。', target: 'taskbar' },
 ];
 let tutorialStep = 0;
 let tutorialUserDragged = false;
