@@ -39,6 +39,7 @@ setupSettings();
 setupQueueActions();
 setupSplitters();
 setupKeyboardShortcuts();
+setupQueueToggle();
 
 window.addEventListener('resize', () => player.refit?.());
 new ResizeObserver(() => player.refit?.()).observe(document.querySelector('.preview-stage'));
@@ -859,6 +860,35 @@ function seekRelative(deltaSec) {
   const total = state.current.parsed.durationSec;
   const t = Math.max(0, Math.min(total, player.currentTime() + deltaSec));
   player.seek(t);
+}
+
+function setupQueueToggle() {
+  const btn = $('#queueToggleBtn');
+  const bd  = $('#queueBackdrop');
+  const close = () => {
+    document.body.classList.remove('queue-open');
+    btn?.setAttribute('aria-expanded', 'false');
+  };
+  const open = () => {
+    document.body.classList.add('queue-open');
+    btn?.setAttribute('aria-expanded', 'true');
+  };
+  btn?.addEventListener('click', () => {
+    if (document.body.classList.contains('queue-open')) close();
+    else open();
+  });
+  bd?.addEventListener('click', close);
+  // Auto-close if user resizes back to wide layout.
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 860) close();
+  });
+  // Close after selecting an item in narrow mode so the preview is visible.
+  document.addEventListener('click', (e) => {
+    if (window.innerWidth > 860) return;
+    if (e.target.closest('.queue-item') && !e.target.closest('[data-action="remove"]') && !e.target.closest('.q-dl')) {
+      close();
+    }
+  });
 }
 
 function cycleSelection(direction) {

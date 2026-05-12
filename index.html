@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>3DS 3D Media Studio — 3D動画/写真プレイヤー&コンバーター</title>
 <meta name="description" content="ニンテンドー3DSで撮影した3D動画(.AVI)と3D写真(.MPO)をブラウザで再生・変換・編集">
-<link rel="stylesheet" href="style.css?v=win95-resp">
+<link rel="stylesheet" href="style.css?v=win95-resp2">
 
 <!-- Google Analytics 4 (placeholder ID — replace G-XXXXXXXXXX with your real ID) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
@@ -30,6 +30,7 @@
       <circle cx="19" cy="20.5" r="0.6" fill="currentColor"/>
     </svg>
     <h1>3DS 3D Media Studio</h1>
+    <button id="queueToggleBtn" class="titlebar-btn queue-toggle" type="button" title="キューを開閉" aria-expanded="false">≡ キュー</button>
   </div>
 </header>
 
@@ -92,6 +93,7 @@
 
     <div class="splitter splitter-v" id="splitterV" role="separator" aria-orientation="vertical" title="ドラッグで幅変更"></div>
 
+    <div id="queueBackdrop" class="queue-backdrop" aria-hidden="true"></div>
     <!-- Right: Queue (also acts as drop target) -->
     <section id="queueSection" class="queue-section">
       <div class="queue-head">
