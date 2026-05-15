@@ -27,14 +27,15 @@ export async function encodeVideoJob({ buffer, settings, onProgress }) {
   // Decode audio upfront.
   const decoded = decodeImaAdpcmAviChunks(parsed.rawBuffer.buffer, parsed.audio, parsed.audioFmt);
 
-  // --- Configure muxer (created up front; encoder callbacks need it) ---
+  // --- Pre-flight AAC support test (configure + encode + flush a silent chunk) ---
+  const aacWorks = await testAacEncode();
+
+  // --- Build muxer (with or without audio) ---
   const target = new ArrayBufferTarget();
-  // We start optimistically with both video and audio. If audio fails to
-  // configure we re-create the muxer without audio to avoid an empty track.
-  let muxer = new Muxer({
+  const muxer = new Muxer({
     target,
     video: { codec: 'avc', width: outW, height: outH, frameRate: parsed.fps },
-    audio: { codec: 'aac', sampleRate: 48000, numberOfChannels: 1 },
+    audio: aacWorks ? { codec: 'aac', sampleRate: 48000, numberOfChannels: 1 } : undefined,
     fastStart: 'in-memory',
   });
 
@@ -54,18 +55,17 @@ export async function encodeVideoJob({ buffer, settings, onProgress }) {
   };
   try { vEnc.configure(vidConfig); }
   catch (e) {
-    // Fall back to lower profile if main pick failed.
     vidConfig.codec = 'avc1.42E01F';
     vEnc.configure(vidConfig);
   }
   if (vEnc.state !== 'configured') throw new Error('VideoEncoder の構成に失敗');
 
-  // --- Audio encoder (best-effort) ---
+  // --- Audio encoder (only if preflight succeeded) ---
   let aEnc = null;
-  try {
+  if (aacWorks) {
     aEnc = new AudioEncoder({
       output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
-      error: (e) => { encoderError = e; console.error('[audio encoder]', e); },
+      error: (e) => { console.error('[audio encoder]', e); },
     });
     aEnc.configure({
       codec: 'mp4a.40.2',
@@ -73,30 +73,8 @@ export async function encodeVideoJob({ buffer, settings, onProgress }) {
       numberOfChannels: 1,
       bitrate: 96000,
     });
-  } catch (e) {
-    console.warn('[video] AAC configure threw', e);
-    try { aEnc?.close(); } catch {}
-    aEnc = null;
-  }
-  // Give the configure() a tick to surface any async failure via the error callback.
-  await new Promise(r => setTimeout(r, 0));
-  if (aEnc && aEnc.state !== 'configured') {
-    console.warn('[video] AudioEncoder did not reach configured state — output will be silent');
-    try { aEnc.close(); } catch {}
-    aEnc = null;
-  }
-  // If audio failed entirely, re-create the muxer without audio so the
-  // resulting MP4 has no empty/broken audio track.
-  if (!aEnc) {
-    muxer = new Muxer({
-      target,
-      video: { codec: 'avc', width: outW, height: outH, frameRate: parsed.fps },
-      fastStart: 'in-memory',
-    });
-    // Rewire the video encoder's output to the new muxer.
-    // (The encoder's output callback closed over `muxer`, which we just reassigned —
-    //  but the closure captures by reference of the variable, not its value, so it
-    //  picks up the new muxer automatically since we used `let`.)
+  } else {
+    console.warn('[video] AAC encoding unsupported in this browser — output will be silent');
   }
 
   // Encode video frames.
@@ -179,6 +157,57 @@ export async function encodeVideoJob({ buffer, settings, onProgress }) {
 
   onProgress?.(1);
   return new Blob([target.buffer], { type: 'video/mp4' });
+}
+
+// Preflight: configure an AAC encoder, encode one silent frame, await flush.
+// Returns true only if the round trip completed without any error.
+async function testAacEncode() {
+  return new Promise((resolve) => {
+    let errored = false;
+    let enc;
+    try {
+      enc = new AudioEncoder({
+        output: () => {},
+        error: (e) => { errored = true; console.warn('[AAC preflight] error:', e?.message || e); },
+      });
+      enc.configure({
+        codec: 'mp4a.40.2',
+        sampleRate: 48000,
+        numberOfChannels: 1,
+        bitrate: 96000,
+      });
+    } catch (e) {
+      console.warn('[AAC preflight] configure threw:', e?.message || e);
+      try { enc?.close(); } catch {}
+      resolve(false);
+      return;
+    }
+    try {
+      const silent = new Float32Array(1024);
+      const ad = new AudioData({
+        format: 'f32-planar',
+        sampleRate: 48000,
+        numberOfFrames: 1024,
+        numberOfChannels: 1,
+        timestamp: 0,
+        data: silent,
+      });
+      enc.encode(ad);
+      ad.close();
+    } catch (e) {
+      console.warn('[AAC preflight] encode threw:', e?.message || e);
+      try { enc.close(); } catch {}
+      resolve(false);
+      return;
+    }
+    enc.flush()
+      .then(() => { try { enc.close(); } catch {} resolve(!errored); })
+      .catch((e) => {
+        console.warn('[AAC preflight] flush rejected:', e?.message || e);
+        try { enc.close(); } catch {}
+        resolve(false);
+      });
+  });
 }
 
 // Choose an AVC profile/level that fits the output resolution.
