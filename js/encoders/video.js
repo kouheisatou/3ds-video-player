@@ -27,22 +27,35 @@ export async function encodeVideoJob({ buffer, settings, onProgress }) {
   // Decode audio upfront.
   const decoded = decodeImaAdpcmAviChunks(parsed.rawBuffer.buffer, parsed.audio, parsed.audioFmt);
 
-  // --- Pick supported audio codec ---
-  let audioCodec = null;
-  for (const cand of ['mp4a.40.2', 'mp4a.40.5', 'mp4a.67']) {
-    try {
-      const sup = await AudioEncoder.isConfigSupported({
-        codec: cand,
-        sampleRate: 48000,
-        numberOfChannels: 1,
-        bitrate: 96000,
-      });
-      if (sup?.supported) { audioCodec = cand; break; }
-    } catch {}
+  // --- Pick a supported audio codec. Firefox has decode-only AAC; we
+  //     fall back to Opus there since both AAC and Opus can be muxed into MP4. ---
+  const isFirefox = /firefox/i.test(navigator.userAgent || '');
+  const audioCandidates = isFirefox
+    ? [ { codec: 'opus', mux: 'opus' }, { codec: 'mp4a.40.2', mux: 'aac' } ]
+    : [ { codec: 'mp4a.40.2', mux: 'aac' }, { codec: 'mp4a.40.5', mux: 'aac' }, { codec: 'opus', mux: 'opus' } ];
+
+  let audioCfg = null;
+  let audioMuxCodec = null;
+  outer: for (const cand of audioCandidates) {
+    for (const sr of [48000, 44100, 32000, 22050, 16000]) {
+      try {
+        const sup = await AudioEncoder.isConfigSupported({
+          codec: cand.codec,
+          sampleRate: sr,
+          numberOfChannels: 1,
+          bitrate: cand.codec === 'opus' ? 64000 : 96000,
+        });
+        if (sup?.supported) {
+          audioCfg = sup.config || { codec: cand.codec, sampleRate: sr, numberOfChannels: 1, bitrate: 96000 };
+          audioMuxCodec = cand.mux;
+          console.log('[video] selected audio codec', audioCfg, '→ mux:', audioMuxCodec);
+          break outer;
+        }
+      } catch {}
+    }
   }
-  if (!audioCodec) {
-    // Fall back to no-audio if AAC isn't supported on this browser.
-    console.warn('[video] AAC encoding not supported — output will have no audio');
+  if (!audioCfg) {
+    console.warn('[video] audio encoding not supported — output will have no audio');
   }
 
   // --- Pick supported video codec ---
@@ -68,7 +81,7 @@ export async function encodeVideoJob({ buffer, settings, onProgress }) {
   const muxer = new Muxer({
     target,
     video: { codec: 'avc', width: outW, height: outH, frameRate: parsed.fps },
-    audio: audioCodec ? { codec: 'aac', sampleRate: 48000, numberOfChannels: 1 } : undefined,
+    audio: audioCfg ? { codec: audioMuxCodec, sampleRate: audioCfg.sampleRate, numberOfChannels: audioCfg.numberOfChannels } : undefined,
     fastStart: 'in-memory',
   });
 
@@ -91,16 +104,16 @@ export async function encodeVideoJob({ buffer, settings, onProgress }) {
 
   // Audio encoder.
   let aEnc = null;
-  if (audioCodec) {
+  if (audioCfg) {
     aEnc = new AudioEncoder({
       output: (chunk, meta) => { audioChunksOut++; muxer.addAudioChunk(chunk, meta); },
       error: (e) => { encoderError = e; console.error('[audio encoder]', e); },
     });
     aEnc.configure({
-      codec: audioCodec,
-      sampleRate: 48000,
-      numberOfChannels: 1,
-      bitrate: 96000,
+      codec: audioCfg.codec,
+      sampleRate: audioCfg.sampleRate,
+      numberOfChannels: audioCfg.numberOfChannels || 1,
+      bitrate: audioCfg.bitrate || 96000,
     });
     if (aEnc.state !== 'configured') {
       console.warn('[video] AudioEncoder config failed — proceeding without audio');
@@ -144,9 +157,9 @@ export async function encodeVideoJob({ buffer, settings, onProgress }) {
   prevLeft.close?.();
   prevRight.close?.();
 
-  // Encode audio: resample 16k mono -> 48k mono (linear interpolation).
+  // Encode audio: resample source 16k mono to the encoder's preferred rate.
   const srcPcm = decoded.samples[0].subarray(0, decoded.length);
-  const dstSampleRate = 48000;
+  const dstSampleRate = audioCfg ? audioCfg.sampleRate : 48000;
   const srcSampleRate = decoded.sampleRate;
   const dstLen = Math.floor(decoded.length * dstSampleRate / srcSampleRate);
   const dstPcm = new Float32Array(dstLen);
