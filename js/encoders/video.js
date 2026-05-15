@@ -27,85 +27,76 @@ export async function encodeVideoJob({ buffer, settings, onProgress }) {
   // Decode audio upfront.
   const decoded = decodeImaAdpcmAviChunks(parsed.rawBuffer.buffer, parsed.audio, parsed.audioFmt);
 
-  // --- Pick supported audio codec ---
-  let audioCodec = null;
-  for (const cand of ['mp4a.40.2', 'mp4a.40.5', 'mp4a.67']) {
-    try {
-      const sup = await AudioEncoder.isConfigSupported({
-        codec: cand,
-        sampleRate: 48000,
-        numberOfChannels: 1,
-        bitrate: 96000,
-      });
-      if (sup?.supported) { audioCodec = cand; break; }
-    } catch {}
-  }
-  if (!audioCodec) {
-    // Fall back to no-audio if AAC isn't supported on this browser.
-    console.warn('[video] AAC encoding not supported — output will have no audio');
-  }
-
-  // --- Pick supported video codec ---
-  const tryVideoCodecs = [pickH264Codec(outW, outH), 'avc1.42E01F', 'avc1.42001F', 'avc1.42E020'];
-  let videoCodec = null;
-  for (const cand of tryVideoCodecs) {
-    try {
-      const sup = await VideoEncoder.isConfigSupported({
-        codec: cand,
-        width: outW,
-        height: outH,
-        bitrate: settings.videoBitrate || 8_000_000,
-        framerate: parsed.fps,
-        avc: { format: 'avc' },
-      });
-      if (sup?.supported) { videoCodec = cand; break; }
-    } catch {}
-  }
-  if (!videoCodec) throw new Error('H.264 エンコーダがサポートされていません');
-
-  // Configure muxer.
+  // --- Configure muxer (created up front; encoder callbacks need it) ---
   const target = new ArrayBufferTarget();
-  const muxer = new Muxer({
+  // We start optimistically with both video and audio. If audio fails to
+  // configure we re-create the muxer without audio to avoid an empty track.
+  let muxer = new Muxer({
     target,
     video: { codec: 'avc', width: outW, height: outH, frameRate: parsed.fps },
-    audio: audioCodec ? { codec: 'aac', sampleRate: 48000, numberOfChannels: 1 } : undefined,
+    audio: { codec: 'aac', sampleRate: 48000, numberOfChannels: 1 },
     fastStart: 'in-memory',
   });
 
-  // Video encoder.
+  // --- Video encoder ---
   let encoderError = null;
   const vEnc = new VideoEncoder({
     output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
     error: (e) => { encoderError = e; console.error('[video encoder]', e); },
   });
-  vEnc.configure({
-    codec: videoCodec,
+  const vidConfig = {
+    codec: pickH264Codec(outW, outH),
     width: outW,
     height: outH,
     bitrate: settings.videoBitrate || 8_000_000,
     framerate: parsed.fps,
     avc: { format: 'avc' },
-  });
+  };
+  try { vEnc.configure(vidConfig); }
+  catch (e) {
+    // Fall back to lower profile if main pick failed.
+    vidConfig.codec = 'avc1.42E01F';
+    vEnc.configure(vidConfig);
+  }
   if (vEnc.state !== 'configured') throw new Error('VideoEncoder の構成に失敗');
 
-  // Audio encoder.
+  // --- Audio encoder (best-effort) ---
   let aEnc = null;
-  if (audioCodec) {
+  try {
     aEnc = new AudioEncoder({
       output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
       error: (e) => { encoderError = e; console.error('[audio encoder]', e); },
     });
     aEnc.configure({
-      codec: audioCodec,
+      codec: 'mp4a.40.2',
       sampleRate: 48000,
       numberOfChannels: 1,
       bitrate: 96000,
     });
-    if (aEnc.state !== 'configured') {
-      console.warn('[video] AudioEncoder config failed — proceeding without audio');
-      try { aEnc.close(); } catch {}
-      aEnc = null;
-    }
+  } catch (e) {
+    console.warn('[video] AAC configure threw', e);
+    try { aEnc?.close(); } catch {}
+    aEnc = null;
+  }
+  // Give the configure() a tick to surface any async failure via the error callback.
+  await new Promise(r => setTimeout(r, 0));
+  if (aEnc && aEnc.state !== 'configured') {
+    console.warn('[video] AudioEncoder did not reach configured state — output will be silent');
+    try { aEnc.close(); } catch {}
+    aEnc = null;
+  }
+  // If audio failed entirely, re-create the muxer without audio so the
+  // resulting MP4 has no empty/broken audio track.
+  if (!aEnc) {
+    muxer = new Muxer({
+      target,
+      video: { codec: 'avc', width: outW, height: outH, frameRate: parsed.fps },
+      fastStart: 'in-memory',
+    });
+    // Rewire the video encoder's output to the new muxer.
+    // (The encoder's output callback closed over `muxer`, which we just reassigned —
+    //  but the closure captures by reference of the variable, not its value, so it
+    //  picks up the new muxer automatically since we used `let`.)
   }
 
   // Encode video frames.
